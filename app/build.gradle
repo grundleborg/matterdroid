@@ -1,4 +1,15 @@
+buildscript {
+    repositories {
+        mavenCentral()
+    }
+
+    dependencies {
+        classpath 'com.neenbedankt.gradle.plugins:android-apt:1.8'
+    }
+}
+
 apply plugin: 'com.android.application'
+apply plugin: 'android-apt'
 
 android {
     compileSdkVersion 24
@@ -29,4 +40,9 @@ dependencies {
 
     // Timber, for better logging.
     compile 'com.jakewharton.timber:timber:4.1.2'
+
+    // ButterKnife
+    compile 'com.jakewharton:butterknife:8.2.1'
+    apt 'com.jakewharton:butterknife-compiler:8.2.1'
+
 }
