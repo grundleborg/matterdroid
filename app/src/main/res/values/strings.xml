@@ -1,3 +1,14 @@
 <resources>
+    <!-- App -->
     <string name="app_name">MatterDroid</string>
+
+    <!-- Activity: Login -->
+    <string name="title_activity_login">Sign In</string>
+
+    <!-- Content: Login -->
+    <string name="co_login_server_hint">https://mm.example.com</string>
+    <string name="co_login_email_hint">you@yourdomain.com</string>
+    <string name="co_login_password_hint">* * * * * *</string>
+    <string name="co_login_submit_text">Sign In</string>
+
 </resources>
