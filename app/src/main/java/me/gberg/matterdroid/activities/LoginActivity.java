@@ -8,12 +8,26 @@ import android.webkit.URLUtil;
 import android.widget.Button;
 import android.widget.TextView;
 
+import com.google.gson.FieldNamingPolicy;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+
 import java.util.regex.Pattern;
 
 import butterknife.BindView;
 import butterknife.ButterKnife;
 import butterknife.OnClick;
 import me.gberg.matterdroid.R;
+import me.gberg.matterdroid.api.LoginAPI;
+import me.gberg.matterdroid.model.LoginRequest;
+import me.gberg.matterdroid.model.User;
+import retrofit2.Retrofit;
+import retrofit2.adapter.rxjava.RxJavaCallAdapterFactory;
+import retrofit2.converter.gson.GsonConverterFactory;
+import rx.Observable;
+import rx.Subscriber;
+import rx.android.schedulers.AndroidSchedulers;
+import rx.schedulers.Schedulers;
 import timber.log.Timber;
 
 public class LoginActivity extends AppCompatActivity {
@@ -57,7 +71,39 @@ public class LoginActivity extends AppCompatActivity {
         final String email = emailView.getText().toString();
         final String password = passwordView.getText().toString();
 
-        // TODO: Attempt to log in to the server.
+        // Set up the GSON converter.
+        Gson gson = new GsonBuilder()
+                .setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES)
+                .create();
+
+        // Set up the Retrofit.
+        Retrofit retrofit = new Retrofit.Builder()
+                .baseUrl(server)
+                .addConverterFactory(GsonConverterFactory.create(gson))
+                .addCallAdapterFactory(RxJavaCallAdapterFactory.create())
+                .build();
+
+        LoginAPI loginService = retrofit.create(LoginAPI.class);
+        LoginRequest loginRequest = new LoginRequest(email, password, null);
+        Observable<User> loginObservable = loginService.login(loginRequest);
+        loginObservable.subscribeOn(Schedulers.newThread())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(new Subscriber<User>() {
+                    @Override
+                    public void onCompleted() {
+                        Timber.v("Completed.");
+                    }
+
+                    @Override
+                    public void onError(Throwable e) {
+                        Timber.e(e, e.getMessage());
+                    }
+
+                    @Override
+                    public void onNext(User user) {
+                        Timber.i("Logged in successfully: "+user.id);
+                    }
+                });
     }
 
     /**
