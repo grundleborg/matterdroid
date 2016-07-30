@@ -8,15 +8,16 @@ import android.webkit.URLUtil;
 import android.widget.Button;
 import android.widget.TextView;
 
-import com.google.gson.FieldNamingPolicy;
 import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
 
 import java.util.regex.Pattern;
+
+import javax.inject.Inject;
 
 import butterknife.BindView;
 import butterknife.ButterKnife;
 import butterknife.OnClick;
+import me.gberg.matterdroid.App;
 import me.gberg.matterdroid.R;
 import me.gberg.matterdroid.api.LoginAPI;
 import me.gberg.matterdroid.model.LoginRequest;
@@ -44,10 +45,15 @@ public class LoginActivity extends AppCompatActivity {
     @BindView(R.id.co_login_submit)
     Button submitView;
 
+    @Inject
+    Gson gson;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         Timber.v("onCreate() called.");
+
+        ((App) getApplication()).getLoginComponent().inject(this);
 
         setContentView(R.layout.ac_login);
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
@@ -71,12 +77,6 @@ public class LoginActivity extends AppCompatActivity {
         final String email = emailView.getText().toString();
         final String password = passwordView.getText().toString();
 
-        // Set up the GSON converter.
-        Gson gson = new GsonBuilder()
-                .setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES)
-                .create();
-
-        // Set up the Retrofit.
         Retrofit retrofit = new Retrofit.Builder()
                 .baseUrl(server)
                 .addConverterFactory(GsonConverterFactory.create(gson))
