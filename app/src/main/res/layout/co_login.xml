@@ -15,54 +15,85 @@
 
     <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
+        android:layout_height="match_parent"
         android:layout_centerVertical="true"
         android:layout_centerHorizontal="true"
         android:orientation="vertical"
         android:gravity="center">
 
-        <EditText
-            android:id="@+id/co_login_server"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:gravity="center"
-            android:layout_margin="16dp"
-            android:padding="16dp"
-            android:ems="12"
-            android:inputType="textUri"
-            android:hint="@string/co_login_server_hint"/>
+        <LinearLayout
+            android:layout_height="match_parent"
+            android:layout_width="match_parent"
+            android:layout_weight="1"
+            android:gravity="center">
 
-        <EditText
-            android:id="@+id/co_login_email"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:gravity="center"
-            android:layout_margin="16dp"
-            android:padding="16dp"
-            android:ems="12"
-            android:inputType="textEmailAddress"
-            android:hint="@string/co_login_email_hint"/>
+            <EditText
+                android:id="@+id/co_login_server"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:gravity="center"
+                android:layout_margin="4dp"
+                android:padding="16dp"
+                android:ems="12"
+                android:inputType="textUri"
+                android:hint="@string/co_login_server_hint"/>
 
-        <EditText
-            android:id="@+id/co_login_password"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:gravity="center"
-            android:layout_margin="16dp"
-            android:layout_marginTop="0dp"
-            android:padding="16dp"
-            android:ems="12"
-            android:inputType="textPassword"
-            android:hint="@string/co_login_password_hint"/>
+        </LinearLayout>
 
-        <Button
-            android:id="@+id/co_login_submit"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:gravity="center"
-            android:layout_margin="16dp"
-            android:padding="16dp"
-            android:text="@string/co_login_submit_text"/>
+        <LinearLayout
+            android:layout_height="match_parent"
+            android:layout_width="match_parent"
+            android:layout_weight="1"
+            android:gravity="center">
+
+            <EditText
+                android:id="@+id/co_login_email"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:gravity="center"
+                android:layout_margin="4dp"
+                android:padding="16dp"
+                android:ems="12"
+                android:inputType="textEmailAddress"
+                android:hint="@string/co_login_email_hint"/>
+
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_height="match_parent"
+            android:layout_width="match_parent"
+            android:layout_weight="1"
+            android:gravity="center">
+
+            <EditText
+                android:id="@+id/co_login_password"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:gravity="center"
+                android:layout_margin="4dp"
+                android:padding="16dp"
+                android:ems="12"
+                android:inputType="textPassword"
+                android:hint="@string/co_login_password_hint"/>
+
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_height="match_parent"
+            android:layout_width="match_parent"
+            android:layout_weight="1"
+            android:gravity="center">
+
+            <Button
+                android:id="@+id/co_login_submit"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:gravity="center"
+                android:layout_margin="4dp"
+                android:padding="16dp"
+                android:text="@string/co_login_submit_text"/>
+
+        </LinearLayout>
 
     </LinearLayout>
 

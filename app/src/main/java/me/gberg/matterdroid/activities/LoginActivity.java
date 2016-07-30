@@ -1,11 +1,16 @@
 package me.gberg.matterdroid.activities;
 
+import android.content.Context;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.util.Patterns;
+import android.view.KeyEvent;
+import android.view.inputmethod.EditorInfo;
+import android.view.inputmethod.InputMethodManager;
 import android.webkit.URLUtil;
 import android.widget.Button;
+import android.widget.EditText;
 import android.widget.TextView;
 
 import com.google.gson.Gson;
@@ -63,6 +68,18 @@ public class LoginActivity extends AppCompatActivity {
         setSupportActionBar(toolbar);
 
         ButterKnife.bind(this);
+
+        // When the password is entered and Done is clicked on the keyboard, submit the form.
+        passwordView.setOnEditorActionListener(new EditText.OnEditorActionListener() {
+            @Override
+            public boolean onEditorAction(TextView v, int actionId, KeyEvent event) {
+                if (actionId == EditorInfo.IME_ACTION_DONE) {
+                    submitView.performClick();
+                    return true;
+                }
+                return false;
+            }
+        });
     }
 
     @OnClick(R.id.co_login_submit)
@@ -161,10 +178,20 @@ public class LoginActivity extends AppCompatActivity {
 
     private void setUnrecognisedEmailError() {
         emailView.setError(getResources().getString(R.string.co_login_api_error_unrecognised_email));
+        emailView.requestFocus();
+        InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
+        if (imm != null) {
+            imm.showSoftInput(emailView, InputMethodManager.SHOW_IMPLICIT);
+        }
     }
 
     private void setWrongPasswordError() {
         passwordView.setError(getResources().getString(R.string.co_login_api_error_wrong_password));
+        passwordView.requestFocus();
+        InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
+        if (imm != null) {
+            imm.showSoftInput(passwordView, InputMethodManager.SHOW_IMPLICIT);
+        }
     }
 
 }
