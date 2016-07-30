@@ -20,9 +20,12 @@ import butterknife.OnClick;
 import me.gberg.matterdroid.App;
 import me.gberg.matterdroid.R;
 import me.gberg.matterdroid.api.LoginAPI;
+import me.gberg.matterdroid.model.APIError;
 import me.gberg.matterdroid.model.LoginRequest;
 import me.gberg.matterdroid.model.User;
+import me.gberg.matterdroid.utils.retrofit.ErrorParser;
 import retrofit2.Retrofit;
+import retrofit2.adapter.rxjava.HttpException;
 import retrofit2.adapter.rxjava.RxJavaCallAdapterFactory;
 import retrofit2.converter.gson.GsonConverterFactory;
 import rx.Observable;
@@ -77,11 +80,13 @@ public class LoginActivity extends AppCompatActivity {
         final String email = emailView.getText().toString();
         final String password = passwordView.getText().toString();
 
-        Retrofit retrofit = new Retrofit.Builder()
+        final Retrofit retrofit = new Retrofit.Builder()
                 .baseUrl(server)
                 .addConverterFactory(GsonConverterFactory.create(gson))
                 .addCallAdapterFactory(RxJavaCallAdapterFactory.create())
                 .build();
+
+        final ErrorParser errorParser = new ErrorParser(retrofit);
 
         LoginAPI loginService = retrofit.create(LoginAPI.class);
         LoginRequest loginRequest = new LoginRequest(email, password, null);
@@ -96,6 +101,22 @@ public class LoginActivity extends AppCompatActivity {
 
                     @Override
                     public void onError(Throwable e) {
+
+                        // Communicate error messages from error responses that are recogniseds.
+                        if (e instanceof HttpException) {
+                            APIError apiError = errorParser.parseError(((HttpException) e).response());
+                            if (apiError.is(APIError.LOGIN_UNRECOGNISED_EMAIL)) {
+                                // Invalid email address.
+                                setUnrecognisedEmailError();
+                                return;
+                            } else if (apiError.is(APIError.LOGIN_WRONG_PASSWORD)) {
+                                // Invalid password.
+                                setWrongPasswordError();
+                                return;
+                            }
+                        }
+
+                        // Unhandled error. Log it.
                         Timber.e(e, e.getMessage());
                     }
 
@@ -136,6 +157,14 @@ public class LoginActivity extends AppCompatActivity {
         }
 
         return valid;
+    }
+
+    private void setUnrecognisedEmailError() {
+        emailView.setError(getResources().getString(R.string.co_login_api_error_unrecognised_email));
+    }
+
+    private void setWrongPasswordError() {
+        passwordView.setError(getResources().getString(R.string.co_login_api_error_wrong_password));
     }
 
 }
