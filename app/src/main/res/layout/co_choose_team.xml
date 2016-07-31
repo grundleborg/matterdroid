@@ -13,4 +13,9 @@
     tools:context="me.gberg.matterdroid.activities.ChooseTeamActivity"
     tools:showIn="@layout/ac_choose_team">
 
+    <android.support.v7.widget.RecyclerView
+        android:id="@+id/co_choose_team_list"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"/>
+
 </RelativeLayout>

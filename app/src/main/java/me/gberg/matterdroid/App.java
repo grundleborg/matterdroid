@@ -7,6 +7,7 @@ import me.gberg.matterdroid.di.components.DaggerAppComponent;
 import me.gberg.matterdroid.di.components.DaggerLoginComponent;
 import me.gberg.matterdroid.di.components.LoginComponent;
 import me.gberg.matterdroid.di.components.UserComponent;
+import me.gberg.matterdroid.di.modules.APIModule;
 import me.gberg.matterdroid.di.modules.AppModule;
 import me.gberg.matterdroid.di.modules.LoginModule;
 import me.gberg.matterdroid.di.modules.UserModule;
@@ -45,7 +46,9 @@ public class App extends Application {
     }
 
     public UserComponent createUserComponent(final User user, final ServerConnectionParameters serverConnectionParameters) {
-        userComponent = appComponent.createUserComponent(new UserModule(user, serverConnectionParameters));
+        userComponent = appComponent.newUserComponent(
+                new UserModule(user, serverConnectionParameters),
+                new APIModule());
         return userComponent;
     }
 
