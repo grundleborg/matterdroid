@@ -10,10 +10,7 @@ import dagger.Module;
 import dagger.Provides;
 
 @Module
-public class LoginModule {
-
-    public LoginModule() {
-    }
+public class GsonModule {
 
     @Provides
     @Singleton

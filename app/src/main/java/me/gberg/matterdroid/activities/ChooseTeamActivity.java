@@ -1,5 +1,6 @@
 package me.gberg.matterdroid.activities;
 
+import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
@@ -138,4 +139,8 @@ public class ChooseTeamActivity extends AppCompatActivity {
         teamsAdapter.set(teamItems);
     }
 
+    public static void launch(final Activity activity) {
+        Intent intent = new Intent(activity, ChooseTeamActivity.class);
+        activity.startActivity(intent);
+    }
 }

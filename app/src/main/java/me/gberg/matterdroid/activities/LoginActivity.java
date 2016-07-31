@@ -1,5 +1,6 @@
 package me.gberg.matterdroid.activities;
 
+import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
@@ -30,6 +31,7 @@ import me.gberg.matterdroid.model.APIError;
 import me.gberg.matterdroid.model.LoginRequest;
 import me.gberg.matterdroid.model.ServerConnectionParameters;
 import me.gberg.matterdroid.model.User;
+import me.gberg.matterdroid.settings.LoginSettings;
 import me.gberg.matterdroid.utils.api.HttpHeaders;
 import me.gberg.matterdroid.utils.retrofit.ErrorParser;
 import retrofit2.Response;
@@ -57,6 +59,9 @@ public class LoginActivity extends AppCompatActivity {
     Button submitView;
 
     @Inject
+    LoginSettings loginSettings;
+
+    @Inject
     Gson gson;
 
     @Inject
@@ -67,7 +72,7 @@ public class LoginActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         Timber.v("onCreate() called.");
 
-        ((App) getApplication()).getLoginComponent().inject(this);
+        ((App) getApplication()).getAppComponent().inject(this);
 
         setContentView(R.layout.ac_login);
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
@@ -102,6 +107,9 @@ public class LoginActivity extends AppCompatActivity {
         final String server = serverView.getText().toString();
         final String email = emailView.getText().toString();
         final String password = passwordView.getText().toString();
+
+        loginSettings.setServer(server);
+        loginSettings.setEmail(email);
 
         final Retrofit retrofit = new Retrofit.Builder()
                 .baseUrl(server)
@@ -156,9 +164,11 @@ public class LoginActivity extends AppCompatActivity {
                         ServerConnectionParameters serverConnectionParameters = new ServerConnectionParameters(server, token);
                         app.createUserComponent(user, serverConnectionParameters);
 
+                        // Save the fact we've logged in.
+                        loginSettings.setToken(token);
+
                         // Advance to the Choose Team activity and finalise this one.
-                        Intent intent = new Intent(LoginActivity.this, ChooseTeamActivity.class);
-                        startActivity(intent);
+                        ChooseTeamActivity.launch(LoginActivity.this);
                         finish();
                     }
                 });
@@ -214,4 +224,8 @@ public class LoginActivity extends AppCompatActivity {
         }
     }
 
+    public static void launch(final Activity activity) {
+        Intent intent = new Intent(activity, LoginActivity.class);
+        activity.startActivity(intent);
+    }
 }

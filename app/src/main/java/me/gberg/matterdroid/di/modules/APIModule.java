@@ -1,8 +1,6 @@
 package me.gberg.matterdroid.di.modules;
 
-import com.google.gson.FieldNamingPolicy;
 import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
 
 import java.io.IOException;
 
@@ -21,7 +19,6 @@ import okhttp3.logging.HttpLoggingInterceptor;
 import retrofit2.Retrofit;
 import retrofit2.adapter.rxjava.RxJavaCallAdapterFactory;
 import retrofit2.converter.gson.GsonConverterFactory;
-import timber.log.Timber;
 
 /**
  * Created by gberg on 31/07/16.
@@ -31,15 +28,7 @@ public class APIModule {
 
     @Provides
     @UserScope
-    Gson providesGson() {
-        return new GsonBuilder()
-                .setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES)
-                .create();
-    }
-
-    @Provides
-    @UserScope
-    Retrofit providesRetrofit(final Gson gson,
+    public Retrofit providesRetrofit(final Gson gson,
                               final ServerConnectionParameters serverConnectionParameters) {
 
         HttpLoggingInterceptor logging = new HttpLoggingInterceptor();
@@ -76,14 +65,13 @@ public class APIModule {
 
     @Provides
     @UserScope
-    UserAPI providesUserAPI(final Retrofit retrofit) {
-        Timber.w("Providing UserAPI");
+    public UserAPI providesUserAPI(final Retrofit retrofit) {
         return retrofit.create(UserAPI.class);
     }
 
     @Provides
     @UserScope
-    ErrorParser providesErrorParser(final Retrofit retrofit) {
+    public ErrorParser providesErrorParser(final Retrofit retrofit) {
         return new ErrorParser(retrofit);
     }
 }
