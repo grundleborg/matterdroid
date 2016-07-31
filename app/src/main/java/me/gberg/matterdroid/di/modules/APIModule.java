@@ -40,12 +40,8 @@ public class APIModule {
                     public Response intercept(final Chain chain) throws IOException {
                         Request request = chain.request();
                         request = request.newBuilder()
-                                //.header("Token", serverConnectionParameters.token)
-                                .header(HttpHeaders.COOKIE, new StringBuilder()
-                                        .append(HttpHeaders.AUTH_COOKIE_NAME)
-                                        .append("=")
-                                        .append(serverConnectionParameters.token)
-                                        .toString())
+                                .header(HttpHeaders.AUTHORIZATION,
+                                        HttpHeaders.buildAuthorizationHeader(serverConnectionParameters.token))
                                 .build();
                         return chain.proceed(request);
                     }
