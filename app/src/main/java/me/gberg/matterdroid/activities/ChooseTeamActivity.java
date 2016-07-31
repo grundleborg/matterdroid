@@ -1,5 +1,6 @@
 package me.gberg.matterdroid.activities;
 
+import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
 import android.support.design.widget.FloatingActionButton;
@@ -11,6 +12,7 @@ import android.support.v7.widget.Toolbar;
 import android.view.View;
 
 import com.mikepenz.fastadapter.adapters.FastItemAdapter;
+import com.mikepenz.iconics.context.IconicsContextWrapper;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -51,7 +53,7 @@ public class ChooseTeamActivity extends AppCompatActivity {
 
     @Inject
     ErrorParser errorParser;
-    
+
     private FastItemAdapter teamsAdapter;
 
     @Override
@@ -116,6 +118,11 @@ public class ChooseTeamActivity extends AppCompatActivity {
                         onInitialLoadCompletedSuccessfully(response.body());
                     }
                 });
+    }
+
+    @Override
+    protected void attachBaseContext(Context newBase) {
+        super.attachBaseContext(IconicsContextWrapper.wrap(newBase));
     }
 
     void onInitialLoadCompletedSuccessfully(InitialLoad initialLoad) {

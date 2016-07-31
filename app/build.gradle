@@ -75,4 +75,8 @@ dependencies {
 
     // FastAdapter
     compile 'com.mikepenz:fastadapter:1.6.0@aar'
+
+    // Android Iconics
+    compile "com.mikepenz:iconics-core:2.7.1@aar"
+    compile 'com.mikepenz:google-material-typeface:2.2.0.2.original@aar'
 }
