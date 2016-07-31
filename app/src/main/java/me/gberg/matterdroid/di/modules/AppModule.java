@@ -1,24 +1,23 @@
 package me.gberg.matterdroid.di.modules;
 
-import android.app.Application;
-
 import javax.inject.Singleton;
 
 import dagger.Module;
 import dagger.Provides;
+import me.gberg.matterdroid.App;
 
 @Module
 public class AppModule {
 
-    Application application;
+    App app;
 
-    public AppModule(final Application application) {
-        this.application = application;
+    public AppModule(final App app) {
+        this.app = app;
     }
 
     @Provides
     @Singleton
-    Application providesApplication() {
-        return application;
+    App providesApp() {
+        return app;
     }
 }

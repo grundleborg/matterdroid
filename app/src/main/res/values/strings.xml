@@ -16,4 +16,9 @@
     <string name="co_login_api_error_unrecognised_email">We couldn\'t find an account matching the email address you have entered.</string>
     <string name="co_login_api_error_wrong_password">The password you have entered is incorrect.</string>
 
+    <!-- Activity: Choose Team -->
+    <string name="title_activity_choose_team">Choose Team</string>
+
+    <!-- Content: Choose Team -->
+
 </resources>

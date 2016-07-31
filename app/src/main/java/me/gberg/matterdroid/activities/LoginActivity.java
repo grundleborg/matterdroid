@@ -1,6 +1,7 @@
 package me.gberg.matterdroid.activities;
 
 import android.content.Context;
+import android.content.Intent;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
@@ -27,10 +28,12 @@ import me.gberg.matterdroid.R;
 import me.gberg.matterdroid.api.LoginAPI;
 import me.gberg.matterdroid.model.APIError;
 import me.gberg.matterdroid.model.LoginRequest;
+import me.gberg.matterdroid.model.ServerConnectionParameters;
 import me.gberg.matterdroid.model.User;
+import me.gberg.matterdroid.utils.api.HttpHeaders;
 import me.gberg.matterdroid.utils.retrofit.ErrorParser;
+import retrofit2.Response;
 import retrofit2.Retrofit;
-import retrofit2.adapter.rxjava.HttpException;
 import retrofit2.adapter.rxjava.RxJavaCallAdapterFactory;
 import retrofit2.converter.gson.GsonConverterFactory;
 import rx.Observable;
@@ -55,6 +58,9 @@ public class LoginActivity extends AppCompatActivity {
 
     @Inject
     Gson gson;
+
+    @Inject
+    App app;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -107,10 +113,10 @@ public class LoginActivity extends AppCompatActivity {
 
         LoginAPI loginService = retrofit.create(LoginAPI.class);
         LoginRequest loginRequest = new LoginRequest(email, password, null);
-        Observable<User> loginObservable = loginService.login(loginRequest);
+        Observable<Response<User>> loginObservable = loginService.login(loginRequest);
         loginObservable.subscribeOn(Schedulers.newThread())
                 .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(new Subscriber<User>() {
+                .subscribe(new Subscriber<Response<User>>() {
                     @Override
                     public void onCompleted() {
                         Timber.v("Completed.");
@@ -118,10 +124,16 @@ public class LoginActivity extends AppCompatActivity {
 
                     @Override
                     public void onError(Throwable e) {
+                        // Unhandled error. Log it.
+                        Timber.e(e, e.getMessage());
+                    }
 
-                        // Communicate error messages from error responses that are recogniseds.
-                        if (e instanceof HttpException) {
-                            APIError apiError = errorParser.parseError(((HttpException) e).response());
+                    @Override
+                    public void onNext(Response<User> response) {
+
+                        // Handle HTTP error response codes that we recognise.
+                        if (!response.isSuccessful()) {
+                            APIError apiError = errorParser.parseError(response);
                             if (apiError.is(APIError.LOGIN_UNRECOGNISED_EMAIL)) {
                                 // Invalid email address.
                                 setUnrecognisedEmailError();
@@ -131,15 +143,23 @@ public class LoginActivity extends AppCompatActivity {
                                 setWrongPasswordError();
                                 return;
                             }
+                            Timber.e("Unrecognised HTTP response code: " + apiError.statusCode + " with error id " + apiError.id);
+                            return;
                         }
 
-                        // Unhandled error. Log it.
-                        Timber.e(e, e.getMessage());
-                    }
+                        // We have logged in successfully.
+                        User user = response.body();
+                        Timber.i("Logged in successfully with User ID: " + user.id);
 
-                    @Override
-                    public void onNext(User user) {
-                        Timber.i("Logged in successfully: "+user.id);
+                        // Create the UserComponent.
+                        String token = response.headers().get(HttpHeaders.TOKEN);
+                        ServerConnectionParameters serverConnectionParameters = new ServerConnectionParameters(server, token);
+                        app.createUserComponent(user, serverConnectionParameters);
+
+                        // Advance to the Choose Team activity and finalise this one.
+                        Intent intent = new Intent(LoginActivity.this, ChooseTeamActivity.class);
+                        startActivity(intent);
+                        finish();
                     }
                 });
     }
