@@ -26,22 +26,11 @@ import butterknife.ButterKnife;
 import butterknife.OnClick;
 import me.gberg.matterdroid.App;
 import me.gberg.matterdroid.R;
-import me.gberg.matterdroid.api.LoginAPI;
+import me.gberg.matterdroid.events.LoginEvent;
+import me.gberg.matterdroid.managers.SessionManager;
 import me.gberg.matterdroid.model.APIError;
-import me.gberg.matterdroid.model.LoginRequest;
-import me.gberg.matterdroid.model.ServerConnectionParameters;
-import me.gberg.matterdroid.model.User;
-import me.gberg.matterdroid.settings.LoginSettings;
-import me.gberg.matterdroid.utils.api.HttpHeaders;
-import me.gberg.matterdroid.utils.retrofit.ErrorParser;
-import retrofit2.Response;
-import retrofit2.Retrofit;
-import retrofit2.adapter.rxjava.RxJavaCallAdapterFactory;
-import retrofit2.converter.gson.GsonConverterFactory;
-import rx.Observable;
-import rx.Subscriber;
-import rx.android.schedulers.AndroidSchedulers;
-import rx.schedulers.Schedulers;
+import me.gberg.matterdroid.utils.rx.Bus;
+import rx.functions.Action1;
 import timber.log.Timber;
 
 public class LoginActivity extends AppCompatActivity {
@@ -59,7 +48,7 @@ public class LoginActivity extends AppCompatActivity {
     Button submitView;
 
     @Inject
-    LoginSettings loginSettings;
+    SessionManager sessionManager;
 
     @Inject
     Gson gson;
@@ -67,12 +56,28 @@ public class LoginActivity extends AppCompatActivity {
     @Inject
     App app;
 
+    @Inject
+    Bus bus;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         Timber.v("onCreate() called.");
 
         ((App) getApplication()).getAppComponent().inject(this);
+
+        // Subscribe to the event bus.
+        // TODO: Unsubscribe at the correct lifecycle events.
+        bus.toObserverable()
+                .subscribe(new Action1<Object>() {
+                    @Override
+                    public void call(Object event) {
+
+                        if (event instanceof LoginEvent) {
+                            handleLoginEvent((LoginEvent) event);
+                        }
+                    }
+                });
 
         setContentView(R.layout.ac_login);
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
@@ -104,74 +109,38 @@ public class LoginActivity extends AppCompatActivity {
 
         Timber.v("Form is valid.");
 
-        final String server = serverView.getText().toString();
-        final String email = emailView.getText().toString();
-        final String password = passwordView.getText().toString();
+        sessionManager.setServer(serverView.getText().toString());
+        sessionManager.setEmail(emailView.getText().toString());
 
-        loginSettings.setServer(server);
-        loginSettings.setEmail(email);
+        sessionManager.attemptLogin(passwordView.getText().toString());
+    }
 
-        final Retrofit retrofit = new Retrofit.Builder()
-                .baseUrl(server)
-                .addConverterFactory(GsonConverterFactory.create(gson))
-                .addCallAdapterFactory(RxJavaCallAdapterFactory.create())
-                .build();
+    public void handleLoginEvent(final LoginEvent event) {
+        if (event.isApiError()) {
+            APIError apiError = event.getApiError();
+            if (apiError.is(APIError.LOGIN_UNRECOGNISED_EMAIL)) {
+                // Invalid email address.
+                setUnrecognisedEmailError();
+                return;
+            } else if (apiError.is(APIError.LOGIN_WRONG_PASSWORD)) {
+                // Invalid password.
+                setWrongPasswordError();
+                return;
+            }
+            Timber.e("Unrecognised HTTP response code: " + apiError.statusCode + " with error id " + apiError.id);
+            return;
+        }
 
-        final ErrorParser errorParser = new ErrorParser(retrofit);
+        if (event.isError()) {
+            // Unhandled error. Log it.
+            Throwable e = event.getThrowable();
+            Timber.e(e, e.getMessage());
+            return;
+        }
 
-        LoginAPI loginService = retrofit.create(LoginAPI.class);
-        LoginRequest loginRequest = new LoginRequest(email, password, null);
-        Observable<Response<User>> loginObservable = loginService.login(loginRequest);
-        loginObservable.subscribeOn(Schedulers.newThread())
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(new Subscriber<Response<User>>() {
-                    @Override
-                    public void onCompleted() {
-                        Timber.v("Completed.");
-                    }
-
-                    @Override
-                    public void onError(Throwable e) {
-                        // Unhandled error. Log it.
-                        Timber.e(e, e.getMessage());
-                    }
-
-                    @Override
-                    public void onNext(Response<User> response) {
-
-                        // Handle HTTP error response codes that we recognise.
-                        if (!response.isSuccessful()) {
-                            APIError apiError = errorParser.parseError(response);
-                            if (apiError.is(APIError.LOGIN_UNRECOGNISED_EMAIL)) {
-                                // Invalid email address.
-                                setUnrecognisedEmailError();
-                                return;
-                            } else if (apiError.is(APIError.LOGIN_WRONG_PASSWORD)) {
-                                // Invalid password.
-                                setWrongPasswordError();
-                                return;
-                            }
-                            Timber.e("Unrecognised HTTP response code: " + apiError.statusCode + " with error id " + apiError.id);
-                            return;
-                        }
-
-                        // We have logged in successfully.
-                        User user = response.body();
-                        Timber.i("Logged in successfully with User ID: " + user.id);
-
-                        // Create the UserComponent.
-                        String token = response.headers().get(HttpHeaders.TOKEN);
-                        ServerConnectionParameters serverConnectionParameters = new ServerConnectionParameters(server, token);
-                        app.createUserComponent(user, serverConnectionParameters);
-
-                        // Save the fact we've logged in.
-                        loginSettings.setToken(token);
-
-                        // Advance to the Choose Team activity and finalise this one.
-                        ChooseTeamActivity.launch(LoginActivity.this);
-                        finish();
-                    }
-                });
+        // Advance to the Choose Team activity and finalise this one.
+        ChooseTeamActivity.launch(this);
+        finish();
     }
 
     /**

@@ -4,7 +4,6 @@ import android.content.Context;
 
 import me.gberg.matterdroid.App;
 import me.gberg.matterdroid.BuildConfig;
-import me.gberg.matterdroid.model.ServerConnectionParameters;
 import timber.log.Timber;
 
 public class LoginSettings extends SharedPreferencesSettings {
@@ -42,11 +41,6 @@ public class LoginSettings extends SharedPreferencesSettings {
 
     public String getToken() {
         return getString(KEY_TOKEN, null);
-    }
-
-    public ServerConnectionParameters getServerConnectionParameters() {
-        return new ServerConnectionParameters(getServer(), getToken());
-
     }
 
     private final static String FILE = BuildConfig.APPLICATION_ID + ".settings.LoginSettings";

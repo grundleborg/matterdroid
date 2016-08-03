@@ -8,7 +8,7 @@ import dagger.Module;
 import dagger.Provides;
 import me.gberg.matterdroid.api.UserAPI;
 import me.gberg.matterdroid.di.scopes.UserScope;
-import me.gberg.matterdroid.model.ServerConnectionParameters;
+import me.gberg.matterdroid.managers.SessionManager;
 import me.gberg.matterdroid.utils.api.HttpHeaders;
 import me.gberg.matterdroid.utils.retrofit.ErrorParser;
 import okhttp3.Interceptor;
@@ -28,8 +28,7 @@ public class APIModule {
 
     @Provides
     @UserScope
-    public Retrofit providesRetrofit(final Gson gson,
-                              final ServerConnectionParameters serverConnectionParameters) {
+    public Retrofit providesRetrofit(final Gson gson, final SessionManager sessionManager) {
 
         HttpLoggingInterceptor logging = new HttpLoggingInterceptor();
         logging.setLevel(HttpLoggingInterceptor.Level.BODY);
@@ -41,7 +40,7 @@ public class APIModule {
                         Request request = chain.request();
                         request = request.newBuilder()
                                 .header(HttpHeaders.AUTHORIZATION,
-                                        HttpHeaders.buildAuthorizationHeader(serverConnectionParameters.token))
+                                        HttpHeaders.buildAuthorizationHeader(sessionManager.getToken()))
                                 .build();
                         return chain.proceed(request);
                     }
@@ -51,7 +50,7 @@ public class APIModule {
 
         final Retrofit retrofit = new Retrofit.Builder()
                 .client(httpClient)
-                .baseUrl(serverConnectionParameters.server)
+                .baseUrl(sessionManager.getServer())
                 .addConverterFactory(GsonConverterFactory.create(gson))
                 .addCallAdapterFactory(RxJavaCallAdapterFactory.create())
                 .build();

@@ -9,7 +9,6 @@ import me.gberg.matterdroid.di.modules.APIModule;
 import me.gberg.matterdroid.di.modules.AppModule;
 import me.gberg.matterdroid.di.modules.GsonModule;
 import me.gberg.matterdroid.di.modules.UserModule;
-import me.gberg.matterdroid.model.ServerConnectionParameters;
 import me.gberg.matterdroid.model.User;
 import timber.log.Timber;
 
@@ -39,9 +38,9 @@ public class App extends Application {
         return appComponent;
     }
 
-    public UserComponent createUserComponent(final User user, final ServerConnectionParameters serverConnectionParameters) {
+    public UserComponent createUserComponent(final User user) {
         userComponent = appComponent.newUserComponent(
-                new UserModule(user, serverConnectionParameters),
+                new UserModule(user),
                 new APIModule());
         return userComponent;
     }
