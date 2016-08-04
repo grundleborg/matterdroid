@@ -30,6 +30,8 @@ public class App extends Application {
             Timber.plant(new Timber.DebugTree());
         }
 
+        Timber.v("onCreate() called.");
+
         // Initialise Dagger Components
         appComponent = DaggerAppComponent.builder()
                 .appModule(new AppModule(this))

@@ -138,7 +138,8 @@ public class LoginActivity extends AppCompatActivity {
             return;
         }
 
-        // Advance to the Choose Team activity and finalise this one.
+        // Advance to the Choose Team activity and finalise this one.#
+        sessionManager.setUser(event.getUser());
         ChooseTeamActivity.launch(this);
         finish();
     }

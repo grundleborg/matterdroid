@@ -55,7 +55,9 @@ public class LaunchActivity extends AppCompatActivity {
         if (sessionManager.isLoggedIn()) {
             if (sessionManager.isTeamSelected()) {
                 // Logged in and team selected. Go straight to the main activity.
-                // TODO: Launch MainActivity once this exists.
+                MainActivity.launch(this);
+                finish();
+                return;
             } else {
                 // Logged in but no team selected. Go to the Select Team activity.
                 ChooseTeamActivity.launch(this);
@@ -92,6 +94,7 @@ public class LaunchActivity extends AppCompatActivity {
 
         // Success.
         // TODO: If team has already been chosen, go straight to the main activity.
+        sessionManager.setUser(event.getUser());
         ChooseTeamActivity.launch(this);
         finish();
     }

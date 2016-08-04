@@ -113,6 +113,7 @@ public class ChooseTeamActivity extends AppCompatActivity {
 
                 sessionManager.setTeam(team);
                 MainActivity.launch(ChooseTeamActivity.this);
+                finish();
 
                 return true;
             }

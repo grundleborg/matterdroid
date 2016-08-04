@@ -105,6 +105,10 @@ public class SessionManager {
         loginSettings.setToken(token);
     }
 
+    public void setUser(final User user) {
+        this.user = user;
+    }
+
     public void setTeam(Team team) {
         app.createTeamComponent(team);
         this.team = team;
@@ -147,7 +151,7 @@ public class SessionManager {
                         Timber.i("User ID: " + user.id);
                         app.createUserComponent(user);
 
-                        bus.send(new TokenCheckEvent());
+                        bus.send(new TokenCheckEvent(response.body()));
                     }
                 });
     }
@@ -198,7 +202,7 @@ public class SessionManager {
                         // Save the fact we've logged in.
                         setToken(token);
 
-                        bus.send(new LoginEvent());
+                        bus.send(new LoginEvent(response.body()));
                     }
                 });
     }
