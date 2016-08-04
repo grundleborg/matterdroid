@@ -25,17 +25,13 @@ import butterknife.ButterKnife;
 import me.gberg.matterdroid.App;
 import me.gberg.matterdroid.R;
 import me.gberg.matterdroid.adapters.items.ChooseTeamTeamItem;
-import me.gberg.matterdroid.api.UserAPI;
 import me.gberg.matterdroid.di.components.UserComponent;
+import me.gberg.matterdroid.events.TeamsListEvent;
+import me.gberg.matterdroid.managers.TeamsManager;
 import me.gberg.matterdroid.model.APIError;
-import me.gberg.matterdroid.model.InitialLoad;
 import me.gberg.matterdroid.model.Team;
-import me.gberg.matterdroid.utils.retrofit.ErrorParser;
-import retrofit2.Response;
-import rx.Observable;
-import rx.Subscriber;
-import rx.android.schedulers.AndroidSchedulers;
-import rx.schedulers.Schedulers;
+import me.gberg.matterdroid.utils.rx.Bus;
+import rx.functions.Action1;
 import timber.log.Timber;
 
 public class ChooseTeamActivity extends AppCompatActivity {
@@ -50,10 +46,10 @@ public class ChooseTeamActivity extends AppCompatActivity {
     RecyclerView chooseTeamList;
 
     @Inject
-    UserAPI userAPI;
+    Bus bus;
 
     @Inject
-    ErrorParser errorParser;
+    TeamsManager teamsManager;
 
     private FastItemAdapter teamsAdapter;
 
@@ -65,12 +61,23 @@ public class ChooseTeamActivity extends AppCompatActivity {
         // Redirect to the login activity if we can't inject the UserComponent.
         UserComponent userComponent = ((App) getApplication()).getUserComponent();
         if (userComponent == null) {
-            Intent intent = new Intent(this, LoginActivity.class);
-            startActivity(intent);
+            LoginActivity.launch(this);
             finish();
             return;
         }
         userComponent.inject(this);
+
+        // Subscribe to the event bus.
+        // TODO: Unsubscribe at the correct lifecycle events.
+        bus.toObserverable()
+                .subscribe(new Action1<Object>() {
+                    @Override
+                    public void call(Object event) {
+                        if (event instanceof TeamsListEvent) {
+                            handleTeamsListEvent((TeamsListEvent) event);
+                        }
+                    }
+                });
 
         setContentView(R.layout.ac_choose_team);
         ButterKnife.bind(this);
@@ -90,35 +97,8 @@ public class ChooseTeamActivity extends AppCompatActivity {
         teamsAdapter = new FastItemAdapter();
         chooseTeamList.setAdapter(teamsAdapter);
 
-        Observable<Response<InitialLoad>> initialLoadObservable = userAPI.initialLoad();
-        initialLoadObservable.subscribeOn(Schedulers.newThread())
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(new Subscriber<Response<InitialLoad>>() {
-                    @Override
-                    public void onCompleted() {
-                        Timber.v("Completed.");
-                    }
-
-                    @Override
-                    public void onError(final Throwable e) {
-                        // Unhandled error. Log it.
-                        Timber.e(e, e.getMessage());
-                    }
-
-                    @Override
-                    public void onNext(final Response<InitialLoad> response) {
-
-                        // Handle HTTP Response errors.
-                        if (!response.isSuccessful()) {
-                            APIError apiError = errorParser.parseError(response);
-                            Timber.e("Unrecognised HTTP response code: " + apiError.statusCode + " with error id " + apiError.id);
-                            return;
-                        }
-
-                        // Request is successful.
-                        onInitialLoadCompletedSuccessfully(response.body());
-                    }
-                });
+        // Get the teams.
+        teamsManager.loadAvailableTeams();
     }
 
     @Override
@@ -126,12 +106,25 @@ public class ChooseTeamActivity extends AppCompatActivity {
         super.attachBaseContext(IconicsContextWrapper.wrap(newBase));
     }
 
-    void onInitialLoadCompletedSuccessfully(InitialLoad initialLoad) {
-        Timber.v("onInitialLoadCompletedSuccessfully() called.");
+    private void handleTeamsListEvent(final TeamsListEvent event) {
+        if (event.isApiError()) {
+            APIError apiError = event.getApiError();
+            Timber.e("Unrecognised HTTP response code: " + apiError.statusCode + " with error id " + apiError.id);
+            return;
+        }
+
+        if (event.isError()) {
+            // Unhandled error. Log it.
+            Throwable e = event.getThrowable();
+            Timber.e(e, e.getMessage());
+            return;
+        }
+
+        List<Team> teams = event.getTeams();
 
         // Build a list of Team items for the adapter.
         List<ChooseTeamTeamItem> teamItems = new ArrayList<ChooseTeamTeamItem>();
-        for (Team team: initialLoad.teams) {
+        for (Team team: teams) {
             teamItems.add(new ChooseTeamTeamItem(team));
         }
 

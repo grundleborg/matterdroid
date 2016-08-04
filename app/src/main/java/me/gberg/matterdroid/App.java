@@ -4,11 +4,14 @@ import android.app.Application;
 
 import me.gberg.matterdroid.di.components.AppComponent;
 import me.gberg.matterdroid.di.components.DaggerAppComponent;
+import me.gberg.matterdroid.di.components.TeamComponent;
 import me.gberg.matterdroid.di.components.UserComponent;
 import me.gberg.matterdroid.di.modules.APIModule;
 import me.gberg.matterdroid.di.modules.AppModule;
 import me.gberg.matterdroid.di.modules.GsonModule;
+import me.gberg.matterdroid.di.modules.TeamModule;
 import me.gberg.matterdroid.di.modules.UserModule;
+import me.gberg.matterdroid.model.Team;
 import me.gberg.matterdroid.model.User;
 import timber.log.Timber;
 
@@ -16,6 +19,7 @@ public class App extends Application {
 
     private AppComponent appComponent;
     private UserComponent userComponent;
+    private TeamComponent teamComponent;
 
     @Override
     public void onCreate() {
@@ -51,5 +55,20 @@ public class App extends Application {
 
     public UserComponent getUserComponent() {
         return this.userComponent;
+    }
+
+    public TeamComponent createTeamComponent(final Team team) {
+        teamComponent = userComponent.newTeamComponent(
+                new TeamModule(team)
+        );
+        return teamComponent;
+    }
+
+    public void releaseTeamComponent() {
+        this.teamComponent = null;
+    }
+
+    public TeamComponent getTeamComponent() {
+        return this.teamComponent;
     }
 }
