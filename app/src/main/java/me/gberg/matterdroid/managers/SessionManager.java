@@ -105,6 +105,11 @@ public class SessionManager {
         loginSettings.setToken(token);
     }
 
+    public void setTeam(Team team) {
+        app.createTeamComponent(team);
+        this.team = team;
+    }
+
     public void attemptToken() {
         final APIModule apiModule = new APIModule();
         final Retrofit retrofit = apiModule.providesRetrofit(getGson(), this);

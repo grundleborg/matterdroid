@@ -23,6 +23,10 @@ public class ChooseTeamTeamItem extends AbstractItem<ChooseTeamTeamItem, ChooseT
         this.team = team;
     }
 
+    public Team getTeam() {
+        return team;
+    }
+
     @Override
     public int getType() {
         return R.id.id_it_choose_team_team;

@@ -12,6 +12,9 @@ import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
 import android.view.View;
 
+import com.mikepenz.fastadapter.FastAdapter;
+import com.mikepenz.fastadapter.IAdapter;
+import com.mikepenz.fastadapter.IItem;
 import com.mikepenz.fastadapter.adapters.FastItemAdapter;
 import com.mikepenz.iconics.context.IconicsContextWrapper;
 
@@ -27,6 +30,7 @@ import me.gberg.matterdroid.R;
 import me.gberg.matterdroid.adapters.items.ChooseTeamTeamItem;
 import me.gberg.matterdroid.di.components.UserComponent;
 import me.gberg.matterdroid.events.TeamsListEvent;
+import me.gberg.matterdroid.managers.SessionManager;
 import me.gberg.matterdroid.managers.TeamsManager;
 import me.gberg.matterdroid.model.APIError;
 import me.gberg.matterdroid.model.Team;
@@ -47,6 +51,9 @@ public class ChooseTeamActivity extends AppCompatActivity {
 
     @Inject
     Bus bus;
+
+    @Inject
+    SessionManager sessionManager;
 
     @Inject
     TeamsManager teamsManager;
@@ -96,6 +103,20 @@ public class ChooseTeamActivity extends AppCompatActivity {
 
         teamsAdapter = new FastItemAdapter();
         chooseTeamList.setAdapter(teamsAdapter);
+
+        teamsAdapter.withOnClickListener(new FastAdapter.OnClickListener() {
+            @Override
+            public boolean onClick(final View v, final IAdapter adapter, final IItem item, final int position) {
+                ChooseTeamTeamItem teamItem = (ChooseTeamTeamItem) item;
+
+                Team team = teamItem.getTeam();
+
+                sessionManager.setTeam(team);
+                MainActivity.launch(ChooseTeamActivity.this);
+
+                return true;
+            }
+        });
 
         // Get the teams.
         teamsManager.loadAvailableTeams();
