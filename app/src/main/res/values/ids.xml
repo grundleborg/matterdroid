@@ -2,4 +2,5 @@
 <resources>
     <!-- FastAdapter Item IDs -->
     <item type="id" name="id_it_choose_team_team"/>
+    <item type="id" name="id_it_post"/>
 </resources>
