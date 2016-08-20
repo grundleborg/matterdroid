@@ -5,6 +5,7 @@ import dagger.Provides;
 import me.gberg.matterdroid.api.TeamAPI;
 import me.gberg.matterdroid.di.scopes.TeamScope;
 import me.gberg.matterdroid.managers.ChannelsManager;
+import me.gberg.matterdroid.managers.MembersManager;
 import me.gberg.matterdroid.managers.PostsManager;
 import me.gberg.matterdroid.model.Team;
 import me.gberg.matterdroid.utils.retrofit.ErrorParser;
@@ -42,5 +43,11 @@ public class TeamModule {
     @TeamScope
     PostsManager providesPostsManager(Bus bus, Team team, TeamAPI teamApi, ErrorParser errorParser) {
         return new PostsManager(bus, team, teamApi, errorParser);
+    }
+
+    @Provides
+    @TeamScope
+    MembersManager providesMembersManager(Bus bus, Team team, TeamAPI teamAPI, ErrorParser errorParser) {
+        return new MembersManager(errorParser, bus, team, teamAPI);
     }
 }

@@ -45,8 +45,12 @@ dependencies {
     compile 'com.jakewharton:butterknife:8.2.1'
     apt 'com.jakewharton:butterknife-compiler:8.2.1'
 
+    // JodaTime
+    compile 'joda-time:joda-time:2.9.4'
+
     // GSON
     compile 'com.google.code.gson:gson:2.6.2'
+    compile 'com.fatboyindustrial.gson-jodatime-serialisers:gson-jodatime-serialisers:1.3.0'
 
     // OkHTTP
     compile 'com.squareup.okhttp3:okhttp:3.4.1'

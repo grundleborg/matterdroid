@@ -1,5 +1,6 @@
 package me.gberg.matterdroid.di.modules;
 
+import com.fatboyindustrial.gsonjodatime.Converters;
 import com.google.gson.FieldNamingPolicy;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -15,8 +16,9 @@ public class GsonModule {
     @Provides
     @Singleton
     Gson providesGson() {
-        return new GsonBuilder()
-                .setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES)
-                .create();
+        return Converters.registerAll(
+                new GsonBuilder()
+                        .setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES)
+                ).create();
     }
 }

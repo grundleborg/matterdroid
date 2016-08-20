@@ -30,8 +30,10 @@ import me.gberg.matterdroid.R;
 import me.gberg.matterdroid.adapters.items.PostItem;
 import me.gberg.matterdroid.di.components.TeamComponent;
 import me.gberg.matterdroid.events.ChannelsEvent;
+import me.gberg.matterdroid.events.MembersEvent;
 import me.gberg.matterdroid.events.PostsReceivedEvent;
 import me.gberg.matterdroid.managers.ChannelsManager;
+import me.gberg.matterdroid.managers.MembersManager;
 import me.gberg.matterdroid.managers.PostsManager;
 import me.gberg.matterdroid.model.APIError;
 import me.gberg.matterdroid.model.Channel;
@@ -57,6 +59,9 @@ public class MainActivity extends AppCompatActivity {
 
     @Inject
     PostsManager postsManager;
+
+    @Inject
+    MembersManager membersManager;
 
     Drawer drawer;
 
@@ -90,6 +95,8 @@ public class MainActivity extends AppCompatActivity {
                             handleChannelsEvent((ChannelsEvent) event);
                         } else if (event instanceof PostsReceivedEvent) {
                             handlePostsReceivedEvent((PostsReceivedEvent) event);
+                        } else if (event instanceof MembersEvent) {
+                            handleMembersEvent((MembersEvent) event);
                         }
                     }
                 });
@@ -129,6 +136,7 @@ public class MainActivity extends AppCompatActivity {
         postsAdapter.clear();
 
         postsManager.setChannel(channel);
+        membersManager.setChannel(channel);
     }
 
     private void handleChannelsEvent(final ChannelsEvent event) {
@@ -174,6 +182,23 @@ public class MainActivity extends AppCompatActivity {
             postItems.add(new PostItem(post));
         }
         postsAdapter.set(postItems);
+    }
+
+    private void handleMembersEvent(final MembersEvent event) {
+        Timber.v("handleMembersEvent()");
+        if (event.isApiError()) {
+            APIError apiError = event.getApiError();
+            Timber.e("Unrecognised HTTP response code: " + apiError.statusCode + " with error id " + apiError.id);
+            return;
+        } else if (event.isError()) {
+            // Unhandled error. Log it.
+            Throwable e = event.getThrowable();
+            Timber.e(e, e.getMessage());
+            return;
+        }
+
+        // Success
+        Timber.i("Members for channel retrieved: "+event.getMembersCount());
     }
 
     public static void launch(final Activity activity) {
