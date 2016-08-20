@@ -28,12 +28,11 @@ public class APIModule {
 
     @Provides
     @UserScope
-    public Retrofit providesRetrofit(final Gson gson, final SessionManager sessionManager) {
-
+    public OkHttpClient providesOkHttpClient(final SessionManager sessionManager) {
         HttpLoggingInterceptor logging = new HttpLoggingInterceptor();
         logging.setLevel(HttpLoggingInterceptor.Level.BODY);
 
-        OkHttpClient httpClient = new OkHttpClient.Builder()
+        return new OkHttpClient.Builder()
                 .addNetworkInterceptor(new Interceptor() {
                     @Override
                     public Response intercept(final Chain chain) throws IOException {
@@ -47,15 +46,17 @@ public class APIModule {
                 })
                 .addInterceptor(logging)
                 .build();
+    }
 
-        final Retrofit retrofit = new Retrofit.Builder()
+    @Provides
+    @UserScope
+    public Retrofit providesRetrofit(final OkHttpClient httpClient, final Gson gson, final SessionManager sessionManager) {
+        return new Retrofit.Builder()
                 .client(httpClient)
                 .baseUrl(sessionManager.getServer())
                 .addConverterFactory(GsonConverterFactory.create(gson))
                 .addCallAdapterFactory(RxJavaCallAdapterFactory.create())
                 .build();
-
-        return retrofit;
     }
 
     @Provides

@@ -116,7 +116,7 @@ public class SessionManager {
 
     public void attemptToken() {
         final APIModule apiModule = new APIModule();
-        final Retrofit retrofit = apiModule.providesRetrofit(getGson(), this);
+        final Retrofit retrofit = apiModule.providesRetrofit(apiModule.providesOkHttpClient(this), getGson(), this);
         final UserAPI userAPI = apiModule.providesUserAPI(retrofit);
         final ErrorParser errorParser = apiModule.providesErrorParser(retrofit);
 

@@ -35,11 +35,14 @@ import me.gberg.matterdroid.events.PostsReceivedEvent;
 import me.gberg.matterdroid.managers.ChannelsManager;
 import me.gberg.matterdroid.managers.MembersManager;
 import me.gberg.matterdroid.managers.PostsManager;
+import me.gberg.matterdroid.managers.SessionManager;
 import me.gberg.matterdroid.model.APIError;
 import me.gberg.matterdroid.model.Channel;
 import me.gberg.matterdroid.model.Channels;
 import me.gberg.matterdroid.model.Post;
+import me.gberg.matterdroid.utils.picasso.ProfileImagePicasso;
 import me.gberg.matterdroid.utils.rx.Bus;
+import okhttp3.OkHttpClient;
 import rx.functions.Action1;
 import timber.log.Timber;
 
@@ -55,6 +58,9 @@ public class MainActivity extends AppCompatActivity {
     Bus bus;
 
     @Inject
+    SessionManager sessionManager;
+
+    @Inject
     ChannelsManager channelsManager;
 
     @Inject
@@ -63,6 +69,9 @@ public class MainActivity extends AppCompatActivity {
     @Inject
     MembersManager membersManager;
 
+    @Inject
+    OkHttpClient httpClient;
+
     Drawer drawer;
 
     private IItemAdapter<IDrawerItem> drawerAdapter;
@@ -70,6 +79,8 @@ public class MainActivity extends AppCompatActivity {
 
     private Channel channel;
     private FastItemAdapter<IItem> postsAdapter;
+
+    private ProfileImagePicasso profileImagePicasso;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -105,6 +116,8 @@ public class MainActivity extends AppCompatActivity {
         ButterKnife.bind(this);
 
         setSupportActionBar(toolbar);
+
+        profileImagePicasso = new ProfileImagePicasso(sessionManager.getServer(), this, httpClient);
 
         // Set up the drawer.
         drawer = new DrawerBuilder()
@@ -179,7 +192,7 @@ public class MainActivity extends AppCompatActivity {
         List<Post> posts = event.getPosts();
         List<IItem> postItems = new ArrayList<>();
         for (Post post: posts) {
-            postItems.add(new PostItem(post));
+            postItems.add(new PostItem(post, profileImagePicasso));
         }
         postsAdapter.set(postItems);
     }

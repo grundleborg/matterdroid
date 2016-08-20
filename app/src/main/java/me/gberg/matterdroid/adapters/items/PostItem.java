@@ -2,6 +2,7 @@ package me.gberg.matterdroid.adapters.items;
 
 import android.support.v7.widget.RecyclerView;
 import android.view.View;
+import android.widget.ImageView;
 import android.widget.TextView;
 
 import com.mikepenz.fastadapter.items.AbstractItem;
@@ -11,12 +12,15 @@ import butterknife.BindView;
 import butterknife.ButterKnife;
 import me.gberg.matterdroid.R;
 import me.gberg.matterdroid.model.Post;
+import me.gberg.matterdroid.utils.picasso.ProfileImagePicasso;
 
 public class PostItem extends AbstractItem<PostItem, PostItem.ViewHolder> {
     private final Post post;
+    private final ProfileImagePicasso picasso;
 
-    public PostItem(final Post post) {
+    public PostItem(final Post post, final ProfileImagePicasso picasso) {
         this.post = post;
+        this.picasso = picasso;
     }
 
     @Override
@@ -34,12 +38,16 @@ public class PostItem extends AbstractItem<PostItem, PostItem.ViewHolder> {
         super.bindView(viewHolder);
 
         viewHolder.body.setText(post.message);
+        picasso.loadInto(post.userId, viewHolder.userIcon);
     }
 
     protected static class ViewHolder extends RecyclerView.ViewHolder {
 
         @BindView(R.id.it_message_text)
         TextView body;
+
+        @BindView(R.id.it_message_user_icon)
+        ImageView userIcon;
 
         public ViewHolder(View view) {
             super(view);
