@@ -20,6 +20,7 @@ import com.mikepenz.materialdrawer.model.interfaces.IDrawerItem;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.ListIterator;
 
 import javax.inject.Inject;
 
@@ -27,7 +28,8 @@ import butterknife.BindView;
 import butterknife.ButterKnife;
 import me.gberg.matterdroid.App;
 import me.gberg.matterdroid.R;
-import me.gberg.matterdroid.adapters.items.PostItem;
+import me.gberg.matterdroid.adapters.items.PostBasicSubItem;
+import me.gberg.matterdroid.adapters.items.PostBasicTopItem;
 import me.gberg.matterdroid.di.components.TeamComponent;
 import me.gberg.matterdroid.events.ChannelsEvent;
 import me.gberg.matterdroid.events.MembersEvent;
@@ -189,12 +191,20 @@ public class MainActivity extends AppCompatActivity {
         }
 
         // Success.
-        List<Post> posts = event.getPosts();
         List<IItem> postItems = new ArrayList<>();
-        for (Post post: posts) {
-            postItems.add(new PostItem(post, profileImagePicasso));
+        String lastUser = null;
+        List<Post> posts = event.getPosts();
+        ListIterator<Post> postsIterator = posts.listIterator(posts.size());
+        while(postsIterator.hasPrevious()) {
+            final Post post = postsIterator.previous();
+            if (post.userId.equals(lastUser)) {
+                postItems.add(new PostBasicSubItem(post));
+            } else {
+                postItems.add(new PostBasicTopItem(post, profileImagePicasso));
+                lastUser = post.userId;
+            }
         }
-        postsAdapter.set(postItems);
+        postsAdapter.add(0, postItems);
     }
 
     private void handleMembersEvent(final MembersEvent event) {

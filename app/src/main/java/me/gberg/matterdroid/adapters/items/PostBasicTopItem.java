@@ -14,23 +14,23 @@ import me.gberg.matterdroid.R;
 import me.gberg.matterdroid.model.Post;
 import me.gberg.matterdroid.utils.picasso.ProfileImagePicasso;
 
-public class PostItem extends AbstractItem<PostItem, PostItem.ViewHolder> {
+public class PostBasicTopItem extends AbstractItem<PostBasicTopItem, PostBasicTopItem.ViewHolder> {
     private final Post post;
     private final ProfileImagePicasso picasso;
 
-    public PostItem(final Post post, final ProfileImagePicasso picasso) {
+    public PostBasicTopItem(final Post post, final ProfileImagePicasso picasso) {
         this.post = post;
         this.picasso = picasso;
     }
 
     @Override
     public int getType() {
-        return R.id.id_it_post;
+        return R.id.id_it_post_basic_top;
     }
 
     @Override
     public int getLayoutRes() {
-        return R.layout.it_post;
+        return R.layout.it_post_basic_top;
     }
 
     @Override
