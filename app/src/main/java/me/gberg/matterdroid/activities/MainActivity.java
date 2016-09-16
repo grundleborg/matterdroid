@@ -140,7 +140,9 @@ public class MainActivity extends AppCompatActivity {
         drawerAdapter = drawer.getItemAdapter();
 
         postsAdapter = new FastItemAdapter<>();
-        postsView.setLayoutManager(new LinearLayoutManager(this));
+        final LinearLayoutManager postsViewLayoutManager = new LinearLayoutManager(this);
+        postsViewLayoutManager.setReverseLayout(true);
+        postsView.setLayoutManager(postsViewLayoutManager);
         postsView.setItemAnimator(new DefaultItemAnimator());
         postsView.setAdapter(postsAdapter);
 
@@ -221,19 +223,21 @@ public class MainActivity extends AppCompatActivity {
 
         // Success.
         List<IItem> postItems = new ArrayList<>();
-        String lastUser = null;
-        List<Post> posts = event.getPosts();
-        ListIterator<Post> postsIterator = posts.listIterator(posts.size());
-        while(postsIterator.hasPrevious()) {
-            final Post post = postsIterator.previous();
-            if (post.userId.equals(lastUser)) {
-                postItems.add(new PostBasicSubItem(post));
-            } else {
-                postItems.add(new PostBasicTopItem(post, profileImagePicasso));
-                lastUser = post.userId;
+        Post previousPost = null;
+        for (final Post post: event.getPosts()) {
+            if (previousPost != null) {
+                if (post.userId.equals(previousPost.userId)) {
+                    postItems.add(new PostBasicSubItem(previousPost));
+                } else {
+                    postItems.add(new PostBasicTopItem(previousPost, profileImagePicasso));
+                }
             }
+            previousPost = post;
         }
-        postsAdapter.add(0, postItems);
+        if (previousPost != null) {
+            postItems.add(new PostBasicTopItem(previousPost, profileImagePicasso));
+        }
+        postsAdapter.add(postItems);
     }
 
     private void handleMembersEvent(final MembersEvent event) {
