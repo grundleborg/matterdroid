@@ -84,6 +84,8 @@ public class MainActivity extends AppCompatActivity {
 
     private ProfileImagePicasso profileImagePicasso;
 
+    private final static String STATE_CURRENT_CHANNEL = "me.gberg.matterdroid.activities.MainActivity.state.current_channel";
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -129,6 +131,7 @@ public class MainActivity extends AppCompatActivity {
                     @Override
                     public boolean onItemClick(final View view, final int position, final IDrawerItem drawerItem) {
                         onChannelSelected(drawerItem.getIdentifier());
+                        drawer.closeDrawer();
                         return true;
                     }
                 })
@@ -142,6 +145,32 @@ public class MainActivity extends AppCompatActivity {
         postsView.setAdapter(postsAdapter);
 
         channelsManager.loadChannels();
+
+        // Load saved instance state.
+        if (savedInstanceState != null) {
+            Timber.v("SavedInstanceState found.");
+            final String channelId = savedInstanceState.getString(STATE_CURRENT_CHANNEL);
+            if (channelId != null) {
+                // Note: This will only restore the selected channel if the app hasn't been killed.
+                channel = channelsManager.getChannelForId(channelId);
+            }
+        }
+
+        if (channel != null) {
+            postsManager.emitMessages();
+        } else {
+            drawer.openDrawer();
+        }
+    }
+
+    @Override
+    public void onSaveInstanceState(Bundle savedInstanceState) {
+        Timber.v("onSaveInstanceState()");
+        if (channel != null) {
+            savedInstanceState.putString(STATE_CURRENT_CHANNEL, channel.id);
+        }
+
+        super.onSaveInstanceState(savedInstanceState);
     }
 
     private void onChannelSelected(long id) {

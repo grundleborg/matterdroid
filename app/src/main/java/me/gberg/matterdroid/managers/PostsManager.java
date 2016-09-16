@@ -68,12 +68,16 @@ public class PostsManager {
                         }
 
                         // Request is successful.
-                        List<Post> posts = new ArrayList<Post>();
+                        posts = new ArrayList<Post>();
                         for (String id: response.body().order) {
                             posts.add(response.body().posts.get(id));
                         }
                         bus.send(new PostsReceivedEvent(posts));
                     }
                 });
+    }
+
+    public void emitMessages() {
+        bus.send(new PostsReceivedEvent(posts));
     }
 }

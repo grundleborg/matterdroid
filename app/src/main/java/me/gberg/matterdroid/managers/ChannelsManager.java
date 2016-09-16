@@ -4,6 +4,7 @@ import me.gberg.matterdroid.api.TeamAPI;
 import me.gberg.matterdroid.events.ChannelsEvent;
 import me.gberg.matterdroid.events.TeamsListEvent;
 import me.gberg.matterdroid.model.APIError;
+import me.gberg.matterdroid.model.Channel;
 import me.gberg.matterdroid.model.Channels;
 import me.gberg.matterdroid.model.Team;
 import me.gberg.matterdroid.utils.retrofit.ErrorParser;
@@ -57,8 +58,24 @@ public class ChannelsManager {
                         }
 
                         // Request is successful.
-                        bus.send(new ChannelsEvent(response.body()));
+                        ChannelsEvent event = new ChannelsEvent(response.body());
+                        channels = event.getChannels();
+                        bus.send(event);
                     }
                 });
+    }
+
+    public Channel getChannelForId(final String id) {
+        if (channels == null) {
+            return null;
+        }
+
+        for (final Channel channel: channels.channels) {
+            if (channel.id.equals(id)) {
+                return channel;
+            }
+        }
+
+        return null;
     }
 }
