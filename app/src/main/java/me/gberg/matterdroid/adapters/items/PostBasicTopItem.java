@@ -8,6 +8,8 @@ import android.widget.TextView;
 import com.mikepenz.fastadapter.items.AbstractItem;
 import com.mikepenz.fastadapter.utils.ViewHolderFactory;
 
+import java.util.List;
+
 import butterknife.BindView;
 import butterknife.ButterKnife;
 import me.gberg.matterdroid.R;
@@ -34,8 +36,8 @@ public class PostBasicTopItem extends AbstractItem<PostBasicTopItem, PostBasicTo
     }
 
     @Override
-    public void bindView(ViewHolder viewHolder) {
-        super.bindView(viewHolder);
+    public void bindView(ViewHolder viewHolder, List payloads) {
+        super.bindView(viewHolder, payloads);
 
         viewHolder.body.setText(post.message);
         picasso.loadInto(post.userId, viewHolder.userIcon);

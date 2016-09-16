@@ -7,6 +7,8 @@ import android.widget.TextView;
 import com.mikepenz.fastadapter.items.AbstractItem;
 import com.mikepenz.fastadapter.utils.ViewHolderFactory;
 
+import java.util.List;
+
 import butterknife.BindView;
 import butterknife.ButterKnife;
 import me.gberg.matterdroid.R;
@@ -38,8 +40,8 @@ public class ChooseTeamTeamItem extends AbstractItem<ChooseTeamTeamItem, ChooseT
     }
 
     @Override
-    public void bindView(ViewHolder viewHolder) {
-        super.bindView(viewHolder);
+    public void bindView(ViewHolder viewHolder, List payloads) {
+        super.bindView(viewHolder, payloads);
 
         viewHolder.name.setText(team.displayName);
     }
