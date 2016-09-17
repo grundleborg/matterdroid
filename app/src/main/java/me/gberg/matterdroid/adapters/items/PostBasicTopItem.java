@@ -5,7 +5,6 @@ import android.view.View;
 import android.widget.ImageView;
 import android.widget.TextView;
 
-import com.mikepenz.fastadapter.items.AbstractItem;
 import com.mikepenz.fastadapter.utils.ViewHolderFactory;
 
 import java.util.List;
@@ -16,12 +15,11 @@ import me.gberg.matterdroid.R;
 import me.gberg.matterdroid.model.Post;
 import me.gberg.matterdroid.utils.picasso.ProfileImagePicasso;
 
-public class PostBasicTopItem extends AbstractItem<PostBasicTopItem, PostBasicTopItem.ViewHolder> {
-    private final Post post;
+public class PostBasicTopItem extends PostItem<PostBasicTopItem, PostBasicTopItem.ViewHolder> {
     private final ProfileImagePicasso picasso;
 
     public PostBasicTopItem(final Post post, final ProfileImagePicasso picasso) {
-        this.post = post;
+        super(post);
         this.picasso = picasso;
     }
 

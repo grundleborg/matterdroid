@@ -4,7 +4,6 @@ import android.support.v7.widget.RecyclerView;
 import android.view.View;
 import android.widget.TextView;
 
-import com.mikepenz.fastadapter.items.AbstractItem;
 import com.mikepenz.fastadapter.utils.ViewHolderFactory;
 
 import java.util.List;
@@ -14,11 +13,9 @@ import butterknife.ButterKnife;
 import me.gberg.matterdroid.R;
 import me.gberg.matterdroid.model.Post;
 
-public class PostBasicSubItem extends AbstractItem<PostBasicSubItem, PostBasicSubItem.ViewHolder> {
-    private final Post post;
-
+public class PostBasicSubItem extends PostItem<PostBasicSubItem, PostBasicSubItem.ViewHolder> {
     public PostBasicSubItem(final Post post) {
-        this.post = post;
+        super(post);
     }
 
     @Override

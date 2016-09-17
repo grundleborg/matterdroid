@@ -26,6 +26,7 @@ import com.trello.rxlifecycle.navi.NaviLifecycle;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.ListIterator;
 
 import javax.inject.Inject;
 
@@ -35,14 +36,16 @@ import me.gberg.matterdroid.App;
 import me.gberg.matterdroid.R;
 import me.gberg.matterdroid.adapters.items.PostBasicSubItem;
 import me.gberg.matterdroid.adapters.items.PostBasicTopItem;
+import me.gberg.matterdroid.adapters.items.PostItem;
 import me.gberg.matterdroid.di.components.TeamComponent;
+import me.gberg.matterdroid.events.AddPostsEvent;
 import me.gberg.matterdroid.events.ChannelsEvent;
 import me.gberg.matterdroid.events.MembersEvent;
-import me.gberg.matterdroid.events.PostsReceivedEvent;
 import me.gberg.matterdroid.managers.ChannelsManager;
 import me.gberg.matterdroid.managers.MembersManager;
 import me.gberg.matterdroid.managers.PostsManager;
 import me.gberg.matterdroid.managers.SessionManager;
+import me.gberg.matterdroid.managers.WebSocketManager;
 import me.gberg.matterdroid.model.APIError;
 import me.gberg.matterdroid.model.Channel;
 import me.gberg.matterdroid.model.Channels;
@@ -50,6 +53,7 @@ import me.gberg.matterdroid.model.Post;
 import me.gberg.matterdroid.utils.picasso.ProfileImagePicasso;
 import me.gberg.matterdroid.utils.rx.Bus;
 import okhttp3.OkHttpClient;
+import rx.android.schedulers.AndroidSchedulers;
 import rx.functions.Action1;
 import timber.log.Timber;
 
@@ -75,6 +79,9 @@ public class MainActivity extends NaviAppCompatActivity {
 
     @Inject
     MembersManager membersManager;
+
+    @Inject
+    WebSocketManager webSocketManager;
 
     @Inject
     OkHttpClient httpClient;
@@ -114,14 +121,15 @@ public class MainActivity extends NaviAppCompatActivity {
         // Subscribe to the event bus.
         // TODO: Unsubscribe at the correct lifecycle events.
         bus.toObserverable()
+                .observeOn(AndroidSchedulers.mainThread())
                 .compose(provider.bindToLifecycle())
                 .subscribe(new Action1<Object>() {
                     @Override
                     public void call(Object event) {
                         if (event instanceof ChannelsEvent) {
                             handleChannelsEvent((ChannelsEvent) event);
-                        } else if (event instanceof PostsReceivedEvent) {
-                            handlePostsReceivedEvent((PostsReceivedEvent) event);
+                        } else if (event instanceof AddPostsEvent) {
+                            handleAddPostsEvent((AddPostsEvent) event);
                         } else if (event instanceof MembersEvent) {
                             handleMembersEvent((MembersEvent) event);
                         }
@@ -160,6 +168,9 @@ public class MainActivity extends NaviAppCompatActivity {
         postsView.setItemAnimator(new DefaultItemAnimator());
         postsView.setAdapter(footerAdapter.wrap(postsAdapter));
         recreateOnScrollListener();
+
+        // Connect the web socket.
+        webSocketManager.connect();
 
         channelsManager.loadChannels();
 
@@ -252,40 +263,68 @@ public class MainActivity extends NaviAppCompatActivity {
         }
     }
 
-    private void handlePostsReceivedEvent(final PostsReceivedEvent event) {
-        Timber.v("handlePostsReceivedEvent()");
-        if (event.isApiError()) {
-            APIError apiError = event.getApiError();
-            Timber.e("Unrecognised HTTP response code: " + apiError.statusCode + " with error id " + apiError.id);
-            return;
-        } else if (event.isError()) {
-            // Unhandled error. Log it.
-            Throwable e = event.getThrowable();
-            Timber.e(e, e.getMessage());
-            return;
+    private void handleAddPostsEvent(final AddPostsEvent event) {
+        Timber.v("handleAddPostsEvent()");
+
+        Post previousPost = null;
+
+        // If we are inserting at the end of the adapter, there is no previous post. However, if not
+        // then we should set the previous post to the one "before" where we are inserting.
+        if (event.getPosition() < postsAdapter.getItemAdapter().getItemCount()) {
+            try {
+                PostItem postItem = (PostItem) postsAdapter.getItem(event.getPosition());
+                // Check it is not null in case there is some other item here due to wrapped adapters.
+                if (postItem != null) {
+                    previousPost = postItem.getPost();
+                }
+            } catch (ClassCastException e) {
+                // Not a PostItem, so ignore it.
+            }
+
         }
 
-        // Success.
-        List<IItem> postItems = new ArrayList<>();
-        Post previousPost = null;
-        for (final Post post: event.getPosts()) {
-            if (previousPost != null) {
-                if (post.userId.equals(previousPost.userId)) {
-                    postItems.add(new PostBasicSubItem(previousPost));
-                } else {
-                    postItems.add(new PostBasicTopItem(previousPost, profileImagePicasso));
-                }
+        // Iterate through the posts to be added in *reverse order*, but once we have decided which
+        // type of PostItem to use, reverse the order again when adding them to the new items list
+        // so that we end up with them in the right order. This is necessary because they are
+        // ordered programatically in descending time, which is the opposite of how the user
+        // actually perceives things when interacting with the posts list.
+        List<IItem> newPostItems = new ArrayList<>();
+        List<Post> newPosts = event.getPosts();
+
+        ListIterator<Post> newPostsIterator = newPosts.listIterator(newPosts.size());
+        while (newPostsIterator.hasPrevious()) {
+            final Post post = newPostsIterator.previous();
+            if (previousPost != null && previousPost.userId.equals(post.userId)) {
+                // The previous post has the same props. Insert a sub post.
+                newPostItems.add(0, new PostBasicSubItem(post));
+            } else {
+                newPostItems.add(0, new PostBasicTopItem(post, profileImagePicasso));
             }
             previousPost = post;
         }
-        if (previousPost != null) {
-            postItems.add(new PostBasicTopItem(previousPost, profileImagePicasso));
+
+        // Check our scroll position before the update to decide whether to scroll automatically to
+        // the top (visually, bottom) of the view once the new items have been added.
+        boolean shouldAutoScroll = (event.getPosition() == 0);
+        if (postsView.getAdapter().getItemCount() != 0) {
+            int firstCompletelyVisibleItemPosition = ((LinearLayoutManager) postsView.getLayoutManager()).findFirstCompletelyVisibleItemPosition();
+            shouldAutoScroll = shouldAutoScroll && (firstCompletelyVisibleItemPosition == 0);
         }
-        if (event.getPosts().size() == 0) {
-            noMoreScrollBack = true;
+
+        // Add the new items to the adapter.
+        postsAdapter.add(event.getPosition(), newPostItems);
+        if (event.isScrollback()) {
+            footerAdapter.clear();
         }
-        postsAdapter.add(postItems);
-        footerAdapter.clear();
+
+        // If there is an item directly *before* (ie. below) where we insert these items, then we
+        // should check whether to convert it's PostItem type too.
+        // TODO: Implement me!
+
+        // Now the editing of the adapter contents is complete, do the autoscroll if appropriate.
+        if (shouldAutoScroll) {
+            postsView.scrollToPosition(0);
+        }
     }
 
     private void handleMembersEvent(final MembersEvent event) {

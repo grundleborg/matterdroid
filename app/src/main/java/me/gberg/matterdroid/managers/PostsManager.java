@@ -4,18 +4,23 @@ import java.util.ArrayList;
 import java.util.List;
 
 import me.gberg.matterdroid.api.TeamAPI;
-import me.gberg.matterdroid.events.PostsReceivedEvent;
+import me.gberg.matterdroid.events.AddPostsEvent;
 import me.gberg.matterdroid.model.APIError;
 import me.gberg.matterdroid.model.Channel;
 import me.gberg.matterdroid.model.Post;
+import me.gberg.matterdroid.model.PostDeletedMessage;
+import me.gberg.matterdroid.model.PostEditedMessage;
+import me.gberg.matterdroid.model.PostedMessage;
 import me.gberg.matterdroid.model.Posts;
 import me.gberg.matterdroid.model.Team;
+import me.gberg.matterdroid.model.WebSocketMessage;
 import me.gberg.matterdroid.utils.retrofit.ErrorParser;
 import me.gberg.matterdroid.utils.rx.Bus;
 import retrofit2.Response;
 import rx.Observable;
 import rx.Subscriber;
 import rx.android.schedulers.AndroidSchedulers;
+import rx.functions.Action1;
 import rx.schedulers.Schedulers;
 import timber.log.Timber;
 
@@ -35,6 +40,21 @@ public class PostsManager {
         this.team = team;
         this.teamApi = teamApi;
         this.errorParser = errorParser;
+
+        bus.toWebSocketBusObservable()
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(new  Action1<WebSocketMessage>() {
+                    @Override
+                    public void call(WebSocketMessage message) {
+                        if (message instanceof PostedMessage) {
+                            handlePostedMessage((PostedMessage) message);
+                        } else if (message instanceof PostEditedMessage) {
+                            handlePostEditedMessage((PostEditedMessage) message);
+                        } else if (message instanceof PostDeletedMessage) {
+                            handlePostDeletedMessage((PostDeletedMessage) message);
+                        }
+                    }
+                });
     }
 
     public void setChannel(final Channel channel) {
@@ -55,7 +75,7 @@ public class PostsManager {
 
                     @Override
                     public void onError(final Throwable e) {
-                        bus.send(new PostsReceivedEvent(e));
+                        // TODO: Handle error here.
                     }
 
                     @Override
@@ -64,15 +84,16 @@ public class PostsManager {
                         // Handle HTTP Response errors.
                         if (!response.isSuccessful()) {
                             APIError apiError = errorParser.parseError(response);
-                            bus.send(new PostsReceivedEvent(apiError));
+                            // TODO: Handle API Error here.
                         }
 
                         // Request is successful.
+                        // Clear posts list and then populate in order.
                         posts = new ArrayList<Post>();
                         for (String id: response.body().order) {
                             posts.add(response.body().posts.get(id));
                         }
-                        bus.send(new PostsReceivedEvent(posts));
+                        bus.send(new AddPostsEvent(posts, 0));
                     }
                 });
     }
@@ -89,7 +110,7 @@ public class PostsManager {
 
                     @Override
                     public void onError(final Throwable e) {
-                        bus.send(new PostsReceivedEvent(e));
+                        // TODO: Handle error here.
                     }
 
                     @Override
@@ -98,7 +119,7 @@ public class PostsManager {
                         // Handle HTTP Response errors.
                         if (!response.isSuccessful()) {
                             APIError apiError = errorParser.parseError(response);
-                            bus.send(new PostsReceivedEvent(apiError));
+                            // TODO: Handle API Error here.
                         }
 
                         // Request is successful.
@@ -106,13 +127,34 @@ public class PostsManager {
                         for (String id: response.body().order) {
                             newPosts.add(response.body().posts.get(id));
                         }
-                        bus.send(new PostsReceivedEvent(newPosts));
+                        bus.send(new AddPostsEvent(newPosts, posts.size(), true));
                         posts.addAll(newPosts);
                     }
                 });
     }
 
     public void emitMessages() {
-        bus.send(new PostsReceivedEvent(posts));
+        bus.send(new AddPostsEvent(posts, 0));
+    }
+
+    public void handlePostedMessage(final PostedMessage message) {
+        if (!message.channelId.equals(channel.id)) {
+            // Message does not belong to the current channel.
+            return;
+        }
+
+        posts.add(0, message.parsedProps.post);
+
+        List<Post> newPosts = new ArrayList<>();
+        newPosts.add(message.parsedProps.post);
+        bus.send(new AddPostsEvent(newPosts, 0));
+    }
+
+    public void handlePostEditedMessage(final PostEditedMessage message) {
+        // TODO
+    }
+
+    public void handlePostDeletedMessage(final PostDeletedMessage message) {
+        // TODO
     }
 }
