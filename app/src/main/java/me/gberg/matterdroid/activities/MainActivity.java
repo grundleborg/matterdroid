@@ -3,7 +3,6 @@ package me.gberg.matterdroid.activities;
 import android.app.Activity;
 import android.content.Intent;
 import android.os.Bundle;
-import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.DefaultItemAnimator;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
@@ -13,14 +12,20 @@ import android.view.View;
 import com.mikepenz.fastadapter.IItem;
 import com.mikepenz.fastadapter.IItemAdapter;
 import com.mikepenz.fastadapter.adapters.FastItemAdapter;
+import com.mikepenz.fastadapter.adapters.FooterAdapter;
+import com.mikepenz.fastadapter_extensions.items.ProgressItem;
+import com.mikepenz.fastadapter_extensions.scroll.EndlessRecyclerOnScrollListener;
 import com.mikepenz.materialdrawer.Drawer;
 import com.mikepenz.materialdrawer.DrawerBuilder;
 import com.mikepenz.materialdrawer.model.PrimaryDrawerItem;
 import com.mikepenz.materialdrawer.model.interfaces.IDrawerItem;
+import com.trello.navi.component.support.NaviAppCompatActivity;
+import com.trello.rxlifecycle.LifecycleProvider;
+import com.trello.rxlifecycle.android.ActivityEvent;
+import com.trello.rxlifecycle.navi.NaviLifecycle;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.ListIterator;
 
 import javax.inject.Inject;
 
@@ -48,7 +53,7 @@ import okhttp3.OkHttpClient;
 import rx.functions.Action1;
 import timber.log.Timber;
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends NaviAppCompatActivity {
 
     @BindView(R.id.toolbar)
     Toolbar toolbar;
@@ -74,6 +79,9 @@ public class MainActivity extends AppCompatActivity {
     @Inject
     OkHttpClient httpClient;
 
+    private final LifecycleProvider<ActivityEvent> provider
+            = NaviLifecycle.createActivityLifecycleProvider(this);
+
     Drawer drawer;
 
     private IItemAdapter<IDrawerItem> drawerAdapter;
@@ -81,6 +89,9 @@ public class MainActivity extends AppCompatActivity {
 
     private Channel channel;
     private FastItemAdapter<IItem> postsAdapter;
+    private FooterAdapter<ProgressItem> footerAdapter;
+    private boolean noMoreScrollBack = false;
+    EndlessRecyclerOnScrollListener infiniteScrollListener;
 
     private ProfileImagePicasso profileImagePicasso;
 
@@ -103,6 +114,7 @@ public class MainActivity extends AppCompatActivity {
         // Subscribe to the event bus.
         // TODO: Unsubscribe at the correct lifecycle events.
         bus.toObserverable()
+                .compose(provider.bindToLifecycle())
                 .subscribe(new Action1<Object>() {
                     @Override
                     public void call(Object event) {
@@ -140,17 +152,21 @@ public class MainActivity extends AppCompatActivity {
         drawerAdapter = drawer.getItemAdapter();
 
         postsAdapter = new FastItemAdapter<>();
+        footerAdapter = new FooterAdapter<>();
+
         final LinearLayoutManager postsViewLayoutManager = new LinearLayoutManager(this);
         postsViewLayoutManager.setReverseLayout(true);
         postsView.setLayoutManager(postsViewLayoutManager);
         postsView.setItemAnimator(new DefaultItemAnimator());
-        postsView.setAdapter(postsAdapter);
+        postsView.setAdapter(footerAdapter.wrap(postsAdapter));
+        recreateOnScrollListener();
 
         channelsManager.loadChannels();
 
         // Load saved instance state.
         if (savedInstanceState != null) {
             Timber.v("SavedInstanceState found.");
+            postsAdapter.withSavedInstanceState(savedInstanceState);
             final String channelId = savedInstanceState.getString(STATE_CURRENT_CHANNEL);
             if (channelId != null) {
                 // Note: This will only restore the selected channel if the app hasn't been killed.
@@ -168,6 +184,7 @@ public class MainActivity extends AppCompatActivity {
     @Override
     public void onSaveInstanceState(Bundle savedInstanceState) {
         Timber.v("onSaveInstanceState()");
+        savedInstanceState = postsAdapter.saveInstanceState(savedInstanceState);
         if (channel != null) {
             savedInstanceState.putString(STATE_CURRENT_CHANNEL, channel.id);
         }
@@ -175,11 +192,38 @@ public class MainActivity extends AppCompatActivity {
         super.onSaveInstanceState(savedInstanceState);
     }
 
+    /**
+     * Whenever the contents of the view changes, we need to recreate the endless scroll listener
+     * as resetting it messes up how we use it. At some point we should probably investiage a proper
+     * solution to this issue.
+     */
+    private void recreateOnScrollListener() {
+        postsView.clearOnScrollListeners();
+        infiniteScrollListener = new EndlessRecyclerOnScrollListener(footerAdapter) {
+            @Override
+            public void onLoadMore(final int currentPage) {
+                Timber.v("onLoadMore() noMoreScrollback: " + noMoreScrollBack);
+                if (!noMoreScrollBack) {
+                    footerAdapter.clear();
+                    footerAdapter.add(new ProgressItem().withEnabled(false));
+                    postsManager.loadMorePosts();
+                }
+            }
+        };
+        postsView.addOnScrollListener(infiniteScrollListener);
+    }
+
     private void onChannelSelected(long id) {
+        Timber.v("onChannelSelected(): " + id);
         channel = channels.channels.get((int) id);
 
         // Clear the message adapter.
+        footerAdapter.clear();
         postsAdapter.clear();
+
+        recreateOnScrollListener();
+
+        noMoreScrollBack = false;
 
         postsManager.setChannel(channel);
         membersManager.setChannel(channel);
@@ -237,7 +281,11 @@ public class MainActivity extends AppCompatActivity {
         if (previousPost != null) {
             postItems.add(new PostBasicTopItem(previousPost, profileImagePicasso));
         }
+        if (event.getPosts().size() == 0) {
+            noMoreScrollBack = true;
+        }
         postsAdapter.add(postItems);
+        footerAdapter.clear();
     }
 
     private void handleMembersEvent(final MembersEvent event) {

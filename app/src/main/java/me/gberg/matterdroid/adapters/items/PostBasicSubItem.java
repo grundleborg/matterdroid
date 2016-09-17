@@ -2,7 +2,6 @@ package me.gberg.matterdroid.adapters.items;
 
 import android.support.v7.widget.RecyclerView;
 import android.view.View;
-import android.widget.ImageView;
 import android.widget.TextView;
 
 import com.mikepenz.fastadapter.items.AbstractItem;
@@ -14,7 +13,6 @@ import butterknife.BindView;
 import butterknife.ButterKnife;
 import me.gberg.matterdroid.R;
 import me.gberg.matterdroid.model.Post;
-import me.gberg.matterdroid.utils.picasso.ProfileImagePicasso;
 
 public class PostBasicSubItem extends AbstractItem<PostBasicSubItem, PostBasicSubItem.ViewHolder> {
     private final Post post;

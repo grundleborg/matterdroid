@@ -20,6 +20,15 @@ public interface TeamAPI {
             @Path("count") int count
     );
 
+    @GET("api/v3/teams/{teamId}/channels/{channelId}/posts/{lastPostId}/before/{page}/{count}")
+    Observable<Response<Posts>> postsBefore(
+            @Path("teamId") String teamId,
+            @Path("channelId") String channelId,
+            @Path("lastPostId") String lastPostId,
+            @Path("page") int page,
+            @Path("count") int count
+    );
+
     @GET("api/v3/teams/{teamId}/channels/{channelId}/extra_info")
     Observable<Response<ExtraInfo>> extraInfo(
             @Path("teamId") String teamId,

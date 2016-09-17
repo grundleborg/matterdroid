@@ -79,6 +79,7 @@ dependencies {
 
     // FastAdapter
     compile 'com.mikepenz:fastadapter:1.8.1@aar'
+    compile 'com.mikepenz:fastadapter-extensions:1.8.0@aar'
 
     // Android Iconics
     compile "com.mikepenz:iconics-core:2.8.1@aar"

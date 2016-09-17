@@ -77,6 +77,41 @@ public class PostsManager {
                 });
     }
 
+    public void loadMorePosts() {
+        Observable<Response<Posts>> morePostsObservable = teamApi.postsBefore(team.id, channel.id, posts.get(posts.size() - 1).id, 0, 60);
+        morePostsObservable.subscribeOn(Schedulers.newThread())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(new Subscriber<Response<Posts>>() {
+                    @Override
+                    public void onCompleted() {
+                        Timber.v("Completed.");
+                    }
+
+                    @Override
+                    public void onError(final Throwable e) {
+                        bus.send(new PostsReceivedEvent(e));
+                    }
+
+                    @Override
+                    public void onNext(final Response<Posts> response) {
+
+                        // Handle HTTP Response errors.
+                        if (!response.isSuccessful()) {
+                            APIError apiError = errorParser.parseError(response);
+                            bus.send(new PostsReceivedEvent(apiError));
+                        }
+
+                        // Request is successful.
+                        List<Post> newPosts = new ArrayList<Post>();
+                        for (String id: response.body().order) {
+                            newPosts.add(response.body().posts.get(id));
+                        }
+                        bus.send(new PostsReceivedEvent(newPosts));
+                        posts.addAll(newPosts);
+                    }
+                });
+    }
+
     public void emitMessages() {
         bus.send(new PostsReceivedEvent(posts));
     }
