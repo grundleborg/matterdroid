@@ -6,7 +6,7 @@
     android:layout_height="wrap_content"
     android:paddingLeft="48dp">
 
-    <TextView
+    <me.gberg.matterdroid.utils.ui.HtmlTextView
         android:id="@+id/it_message_text"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"

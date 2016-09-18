@@ -1,5 +1,12 @@
 package me.gberg.matterdroid.managers;
 
+import org.tautua.markdownpapers.Markdown;
+import org.tautua.markdownpapers.parser.ParseException;
+
+import java.io.Reader;
+import java.io.StringReader;
+import java.io.StringWriter;
+import java.io.Writer;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -19,7 +26,6 @@ import me.gberg.matterdroid.utils.rx.Bus;
 import retrofit2.Response;
 import rx.Observable;
 import rx.Subscriber;
-import rx.android.schedulers.AndroidSchedulers;
 import rx.functions.Action1;
 import rx.schedulers.Schedulers;
 import timber.log.Timber;
@@ -42,7 +48,7 @@ public class PostsManager {
         this.errorParser = errorParser;
 
         bus.toWebSocketBusObservable()
-                .observeOn(AndroidSchedulers.mainThread())
+                .observeOn(Schedulers.computation())
                 .subscribe(new  Action1<WebSocketMessage>() {
                     @Override
                     public void call(WebSocketMessage message) {
@@ -66,7 +72,7 @@ public class PostsManager {
         // Load the initial set of message for this channel.
         Observable<Response<Posts>> initialLoadObservable = teamApi.posts(team.id, channel.id, 0, 60);
         initialLoadObservable.subscribeOn(Schedulers.newThread())
-                .observeOn(AndroidSchedulers.mainThread())
+                .observeOn(Schedulers.computation())
                 .subscribe(new Subscriber<Response<Posts>>() {
                     @Override
                     public void onCompleted() {
@@ -91,7 +97,9 @@ public class PostsManager {
                         // Clear posts list and then populate in order.
                         posts = new ArrayList<Post>();
                         for (String id: response.body().order) {
-                            posts.add(response.body().posts.get(id));
+                            Post post = response.body().posts.get(id);
+                            parseMarkdown(post);
+                            posts.add(post);
                         }
                         bus.send(new AddPostsEvent(posts, 0));
                     }
@@ -101,7 +109,7 @@ public class PostsManager {
     public void loadMorePosts() {
         Observable<Response<Posts>> morePostsObservable = teamApi.postsBefore(team.id, channel.id, posts.get(posts.size() - 1).id, 0, 60);
         morePostsObservable.subscribeOn(Schedulers.newThread())
-                .observeOn(AndroidSchedulers.mainThread())
+                .observeOn(Schedulers.computation())
                 .subscribe(new Subscriber<Response<Posts>>() {
                     @Override
                     public void onCompleted() {
@@ -125,7 +133,9 @@ public class PostsManager {
                         // Request is successful.
                         List<Post> newPosts = new ArrayList<Post>();
                         for (String id: response.body().order) {
-                            newPosts.add(response.body().posts.get(id));
+                            Post post = response.body().posts.get(id);
+                            parseMarkdown(post);
+                            newPosts.add(post);
                         }
                         bus.send(new AddPostsEvent(newPosts, posts.size(), true));
                         posts.addAll(newPosts);
@@ -143,10 +153,13 @@ public class PostsManager {
             return;
         }
 
-        posts.add(0, message.parsedProps.post);
+        Post post = message.parsedProps.post;
+        parseMarkdown(post);
+
+        posts.add(0, post);
 
         List<Post> newPosts = new ArrayList<>();
-        newPosts.add(message.parsedProps.post);
+        newPosts.add(post);
         bus.send(new AddPostsEvent(newPosts, 0));
     }
 
@@ -156,5 +169,19 @@ public class PostsManager {
 
     public void handlePostDeletedMessage(final PostDeletedMessage message) {
         // TODO
+    }
+
+    private void parseMarkdown(final Post post) {
+        Reader in = new StringReader(post.message);
+        Writer out = new StringWriter();
+
+        Markdown md = new Markdown();
+        try {
+            md.transform(in, out);
+            post.markdown = out.toString();
+        } catch(ParseException e) {
+            Timber.w(e);
+            post.markdown = post.message;
+        }
     }
 }

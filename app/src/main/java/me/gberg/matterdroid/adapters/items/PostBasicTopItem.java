@@ -3,9 +3,10 @@ package me.gberg.matterdroid.adapters.items;
 import android.support.v7.widget.RecyclerView;
 import android.view.View;
 import android.widget.ImageView;
-import android.widget.TextView;
 
 import com.mikepenz.fastadapter.utils.ViewHolderFactory;
+
+import org.sufficientlysecure.htmltextview.HtmlHttpImageGetter;
 
 import java.util.List;
 
@@ -14,6 +15,8 @@ import butterknife.ButterKnife;
 import me.gberg.matterdroid.R;
 import me.gberg.matterdroid.model.Post;
 import me.gberg.matterdroid.utils.picasso.ProfileImagePicasso;
+import me.gberg.matterdroid.utils.ui.HtmlTextView;
+import me.gberg.matterdroid.utils.ui.HtmlTextViewLinkMovementMethod;
 
 public class PostBasicTopItem extends PostItem<PostBasicTopItem, PostBasicTopItem.ViewHolder> {
     private final ProfileImagePicasso picasso;
@@ -37,21 +40,25 @@ public class PostBasicTopItem extends PostItem<PostBasicTopItem, PostBasicTopIte
     public void bindView(ViewHolder viewHolder, List payloads) {
         super.bindView(viewHolder, payloads);
 
-        viewHolder.body.setText(post.message);
+        viewHolder.body.setHtml(post.markdown, viewHolder.imageGetter);
         picasso.loadInto(post.userId, viewHolder.userIcon);
     }
 
     protected static class ViewHolder extends RecyclerView.ViewHolder {
 
         @BindView(R.id.it_message_text)
-        TextView body;
+        HtmlTextView body;
 
         @BindView(R.id.it_message_user_icon)
         ImageView userIcon;
 
+        HtmlHttpImageGetter imageGetter;
+
         public ViewHolder(View view) {
             super(view);
             ButterKnife.bind(this, view);
+            imageGetter = new HtmlHttpImageGetter(body);
+            body.setMovementMethod(new HtmlTextViewLinkMovementMethod());
         }
     }
 
