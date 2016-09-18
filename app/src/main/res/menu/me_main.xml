@@ -8,4 +8,9 @@
         android:title="@string/me_main_about_text"
         app:showAsAction="never"/>
 
+    <item
+        android:id="@+id/me_main_change_team"
+        android:title="@string/me_main_change_team_text"
+        app:showAsAction="never"/>
+
 </menu>

@@ -226,6 +226,10 @@ public class MainActivity extends NaviAppCompatActivity {
                         //start the activity
                         .start(this);
                 return true;
+            case R.id.me_main_change_team:
+                ChooseTeamActivity.launch(this);
+                finish();
+                return true;
             default:
                 return super.onOptionsItemSelected(item);
         }
