@@ -97,4 +97,9 @@ dependencies {
     // Markdown
     compile 'org.tautua.markdownpapers:markdownpapers-core:1.4.4'
     compile 'org.sufficientlysecure:html-textview:2.0'
+
+    // About Libraries
+    compile('com.mikepenz:aboutlibraries:5.8.1@aar') {
+        transitive = true
+    }
 }

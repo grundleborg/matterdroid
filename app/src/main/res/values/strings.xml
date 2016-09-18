@@ -22,4 +22,13 @@
 
     <!-- Content: Choose Team -->
 
+
+    <!-- Menu: Main -->
+    <string name="me_main_about_text">About Matterdroid</string>
+
+    <!-- AboutLibraries Strings -->
+    <string name="aboutLibraries_description_showIcon">true</string>
+    <string name="aboutLibraries_description_showVersion">true</string>
+    <string name="aboutLibraries_description_text">A native Android client for Mattermost.</string>
+
 </resources>
