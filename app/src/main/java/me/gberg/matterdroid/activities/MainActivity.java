@@ -227,6 +227,7 @@ public class MainActivity extends NaviAppCompatActivity {
                         .start(this);
                 return true;
             case R.id.me_main_change_team:
+                sessionManager.changeTeam();
                 ChooseTeamActivity.launch(this);
                 finish();
                 return true;

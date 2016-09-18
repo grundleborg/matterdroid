@@ -114,6 +114,11 @@ public class SessionManager {
         this.team = team;
     }
 
+    public void changeTeam() {
+        setTeam(null);
+        app.releaseTeamComponent();
+    }
+
     public void logOut() {
         setEmail(null);
         setServer(null);
