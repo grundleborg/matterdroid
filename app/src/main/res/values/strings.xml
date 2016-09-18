@@ -26,6 +26,7 @@
     <!-- Menu: Main -->
     <string name="me_main_about_text">About Matterdroid</string>
     <string name="me_main_change_team_text">Change Team</string>
+    <string name="me_main_log_out_text">Log Out</string>
 
     <!-- AboutLibraries Strings -->
     <string name="aboutLibraries_description_showIcon">true</string>

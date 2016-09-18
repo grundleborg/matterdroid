@@ -13,4 +13,9 @@
         android:title="@string/me_main_change_team_text"
         app:showAsAction="never"/>
 
+    <item
+        android:id="@+id/me_main_log_out"
+        android:title="@string/me_main_log_out_text"
+        app:showAsAction="never"/>
+
 </menu>

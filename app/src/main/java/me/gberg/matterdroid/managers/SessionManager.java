@@ -114,6 +114,17 @@ public class SessionManager {
         this.team = team;
     }
 
+    public void logOut() {
+        setEmail(null);
+        setServer(null);
+        setUser(null);
+        setToken(null);
+        setTeam(null);
+
+        app.releaseTeamComponent();
+        app.releaseUserComponent();
+    }
+
     public void attemptToken() {
         final APIModule apiModule = new APIModule();
         final Retrofit retrofit = apiModule.providesRetrofit(apiModule.providesOkHttpClient(this), getGson(), this);

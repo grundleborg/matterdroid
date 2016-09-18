@@ -230,6 +230,11 @@ public class MainActivity extends NaviAppCompatActivity {
                 ChooseTeamActivity.launch(this);
                 finish();
                 return true;
+            case R.id.me_main_log_out:
+                sessionManager.logOut();
+                LoginActivity.launch(this);
+                finish();
+                return true;
             default:
                 return super.onOptionsItemSelected(item);
         }
