@@ -18,5 +18,6 @@ public class Post {
     public String hashtags;
     public List<String> filenames;
     public String pendingPostId;
-    public String markdown;
+    public transient String markdown;
+    public transient boolean pending = false;
 }

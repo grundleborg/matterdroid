@@ -109,6 +109,10 @@ public class SessionManager {
         this.user = user;
     }
 
+    public final User getUser() {
+        return this.user;
+    }
+
     public void setTeam(Team team) {
         app.createTeamComponent(team);
         this.team = team;

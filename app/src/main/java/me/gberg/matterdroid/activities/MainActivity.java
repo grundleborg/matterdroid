@@ -1,6 +1,7 @@
 package me.gberg.matterdroid.activities;
 
 import android.app.Activity;
+import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
 import android.support.v7.widget.DefaultItemAnimator;
@@ -11,6 +12,8 @@ import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.EditText;
+import android.widget.ImageView;
 
 import com.mikepenz.aboutlibraries.Libs;
 import com.mikepenz.aboutlibraries.LibsBuilder;
@@ -20,6 +23,7 @@ import com.mikepenz.fastadapter.adapters.FastItemAdapter;
 import com.mikepenz.fastadapter.adapters.FooterAdapter;
 import com.mikepenz.fastadapter_extensions.items.ProgressItem;
 import com.mikepenz.fastadapter_extensions.scroll.EndlessRecyclerOnScrollListener;
+import com.mikepenz.iconics.context.IconicsContextWrapper;
 import com.mikepenz.materialdrawer.Drawer;
 import com.mikepenz.materialdrawer.DrawerBuilder;
 import com.mikepenz.materialdrawer.model.PrimaryDrawerItem;
@@ -37,6 +41,7 @@ import javax.inject.Inject;
 
 import butterknife.BindView;
 import butterknife.ButterKnife;
+import butterknife.OnClick;
 import me.gberg.matterdroid.App;
 import me.gberg.matterdroid.R;
 import me.gberg.matterdroid.adapters.items.PostBasicSubItem;
@@ -46,6 +51,7 @@ import me.gberg.matterdroid.di.components.TeamComponent;
 import me.gberg.matterdroid.events.AddPostsEvent;
 import me.gberg.matterdroid.events.ChannelsEvent;
 import me.gberg.matterdroid.events.MembersEvent;
+import me.gberg.matterdroid.events.RemovePostEvent;
 import me.gberg.matterdroid.managers.ChannelsManager;
 import me.gberg.matterdroid.managers.MembersManager;
 import me.gberg.matterdroid.managers.PostsManager;
@@ -69,6 +75,12 @@ public class MainActivity extends NaviAppCompatActivity {
 
     @BindView(R.id.co_main_messages_list)
     RecyclerView postsView;
+
+    @BindView(R.id.co_main_new_message)
+    EditText newMessageView;
+
+    @BindView(R.id.co_main_send)
+    ImageView sendView;
 
     @Inject
     Bus bus;
@@ -135,6 +147,8 @@ public class MainActivity extends NaviAppCompatActivity {
                             handleChannelsEvent((ChannelsEvent) event);
                         } else if (event instanceof AddPostsEvent) {
                             handleAddPostsEvent((AddPostsEvent) event);
+                        } else if (event instanceof RemovePostEvent) {
+                            handleRemovePostEvent((RemovePostEvent) event);
                         } else if (event instanceof MembersEvent) {
                             handleMembersEvent((MembersEvent) event);
                         }
@@ -239,6 +253,26 @@ public class MainActivity extends NaviAppCompatActivity {
             default:
                 return super.onOptionsItemSelected(item);
         }
+    }
+
+    @Override
+    protected void attachBaseContext(Context newBase) {
+        super.attachBaseContext(IconicsContextWrapper.wrap(newBase));
+    }
+
+    @OnClick(R.id.co_main_send)
+    void onSendClicked() {
+        Timber.v("onSendClicked()");
+
+        final CharSequence text = newMessageView.getText();
+
+        if (text == null || text.length() <= 0) {
+            return;
+        }
+
+        postsManager.createNewPost(text.toString());
+
+        newMessageView.setText(null);
     }
 
     /**
@@ -363,6 +397,11 @@ public class MainActivity extends NaviAppCompatActivity {
         if (shouldAutoScroll) {
             postsView.scrollToPosition(0);
         }
+    }
+
+    private void handleRemovePostEvent(final RemovePostEvent event) {
+        postsAdapter.remove(event.getPosition());
+        // TODO: Make sure this doesn't break the top/sub division of posts.
     }
 
     private void handleMembersEvent(final MembersEvent event) {

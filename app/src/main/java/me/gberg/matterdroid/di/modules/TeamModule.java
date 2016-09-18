@@ -45,8 +45,8 @@ public class TeamModule {
 
     @Provides
     @TeamScope
-    PostsManager providesPostsManager(Bus bus, Team team, TeamAPI teamApi, ErrorParser errorParser) {
-        return new PostsManager(bus, team, teamApi, errorParser);
+    PostsManager providesPostsManager(Bus bus, Team team, TeamAPI teamApi, SessionManager sessionManager, ErrorParser errorParser) {
+        return new PostsManager(bus, team, teamApi, sessionManager, errorParser);
     }
 
     @Provides
