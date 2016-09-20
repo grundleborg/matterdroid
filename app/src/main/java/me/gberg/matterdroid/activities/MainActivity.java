@@ -300,6 +300,9 @@ public class MainActivity extends NaviAppCompatActivity {
         Timber.v("onChannelSelected(): " + id);
         channel = channels.channels.get((int) id);
 
+        // Set activity title.
+        toolbar.setTitle(channel.displayName);
+
         // Clear the message adapter.
         footerAdapter.clear();
         postsAdapter.clear();

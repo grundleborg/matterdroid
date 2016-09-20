@@ -18,10 +18,13 @@
 
     <!-- Activity: Choose Team -->
     <string name="title_activity_choose_team">Choose Team</string>
-    <string name="title_activity_main">MainActivity</string>
 
     <!-- Content: Choose Team -->
 
+    <!-- Activity: Main -->
+    <string name="title_activity_main">MatterDroid</string>
+
+    <!-- Content: Main -->
 
     <!-- Menu: Main -->
     <string name="me_main_about_text">About Matterdroid</string>
