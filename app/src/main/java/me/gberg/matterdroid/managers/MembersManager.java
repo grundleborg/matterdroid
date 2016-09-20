@@ -26,7 +26,7 @@ public class MembersManager {
     private final TeamAPI teamApi;
 
     private Channel channel;
-    private HashMap<String, Member> members = new HashMap<>();
+    private HashMap<String, Member> members;
     private int membersCount;
 
     public MembersManager(final ErrorParser errorParser,
@@ -42,7 +42,7 @@ public class MembersManager {
     public void setChannel(final Channel channel) {
         this.channel = channel;
         if (this.members != null) {
-            this.members.clear();
+            this.members = null;
             this.membersCount = 0;
         }
 
@@ -78,6 +78,7 @@ public class MembersManager {
 
                         // Save to the manager.
                         membersCount = body.memberCount;
+                        members = new HashMap<String, Member>();
                         for (final Member member: body.members) {
                             members.put(member.id, member);
                         }
@@ -90,5 +91,9 @@ public class MembersManager {
 
     public final Member getMember(final String id) {
         return members.get(id);
+    }
+
+    public final boolean isPopulated() {
+        return members != null;
     }
 }

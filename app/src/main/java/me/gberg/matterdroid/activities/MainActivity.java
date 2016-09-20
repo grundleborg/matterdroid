@@ -37,6 +37,7 @@ import com.trello.rxlifecycle.navi.NaviLifecycle;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.ListIterator;
+import java.util.Map;
 
 import javax.inject.Inject;
 
@@ -61,6 +62,7 @@ import me.gberg.matterdroid.managers.WebSocketManager;
 import me.gberg.matterdroid.model.APIError;
 import me.gberg.matterdroid.model.Channel;
 import me.gberg.matterdroid.model.Channels;
+import me.gberg.matterdroid.model.Member;
 import me.gberg.matterdroid.model.Post;
 import me.gberg.matterdroid.utils.picasso.ProfileImagePicasso;
 import me.gberg.matterdroid.utils.rx.Bus;
@@ -111,6 +113,7 @@ public class MainActivity extends NaviAppCompatActivity {
 
     private IItemAdapter<IDrawerItem> drawerAdapter;
     private Channels channels;
+    private boolean horribleHackShouldTriggerEmitPosts = false;
 
     private Channel channel;
     private FastItemAdapter<IItem> postsAdapter;
@@ -316,8 +319,8 @@ public class MainActivity extends NaviAppCompatActivity {
 
         noMoreScrollBack = false;
 
-        postsManager.setChannel(channel);
         membersManager.setChannel(channel);
+        postsManager.setChannel(channel);
     }
 
     private void handleChannelsEvent(final ChannelsEvent event) {
@@ -380,6 +383,12 @@ public class MainActivity extends NaviAppCompatActivity {
     }
     private void handleAddPostsEvent(final AddPostsEvent event) {
         Timber.v("handleAddPostsEvent()");
+
+        if (!membersManager.isPopulated()) {
+            Timber.v("not bothering as members manager is not yet populated.");
+            horribleHackShouldTriggerEmitPosts = true;
+            return;
+        }
 
         Post previousPost = null;
 
@@ -462,6 +471,11 @@ public class MainActivity extends NaviAppCompatActivity {
 
         // Success
         Timber.i("Members for channel retrieved: "+event.getMembersCount());
+
+        if (postsAdapter.getAdapterItemCount() == 0 && horribleHackShouldTriggerEmitPosts) {
+            postsManager.emitMessages();
+            horribleHackShouldTriggerEmitPosts = false;
+        }
     }
 
     public static void launch(final Activity activity) {

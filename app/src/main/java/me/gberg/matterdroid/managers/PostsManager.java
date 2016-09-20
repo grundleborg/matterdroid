@@ -113,7 +113,7 @@ public class PostsManager {
                             posts.add(post);
                             postsMap.put(post.id, post);
                         }
-                        bus.send(new AddPostsEvent(posts, 0));
+                        bus.send(new AddPostsEvent(new ArrayList<Post>(posts), 0));
                     }
                 });
     }
@@ -152,7 +152,7 @@ public class PostsManager {
                             parseMarkdown(post);
                             newPosts.add(post);
                         }
-                        bus.send(new AddPostsEvent(newPosts, posts.size(), true));
+                        bus.send(new AddPostsEvent(new ArrayList<Post>(newPosts), posts.size(), true));
                         posts.addAll(newPosts);
                         for (final Post post: posts) {
                             postsMap.put(post.id, post);
@@ -163,7 +163,15 @@ public class PostsManager {
     }
 
     public void emitMessages() {
-        bus.send(new AddPostsEvent(posts, 0));
+        Single.create(new Single.OnSubscribe<Void>() {
+            @Override
+            public void call(final SingleSubscriber<? super Void> singleSubscriber) {
+                if (posts != null) {
+                    bus.send(new AddPostsEvent(new ArrayList<Post>(posts), 0));
+                }
+                singleSubscriber.onSuccess(null);
+            }
+        }).subscribeOn(Schedulers.computation()).subscribe();
     }
 
     public void handlePostedMessage(final PostedMessage message) {
@@ -205,7 +213,7 @@ public class PostsManager {
 
             List<Post> newPosts = new ArrayList<>();
             newPosts.add(post);
-            bus.send(new AddPostsEvent(newPosts, 0));
+            bus.send(new AddPostsEvent(new ArrayList<Post>(newPosts), 0));
         } else {
             // TODO: Post is updated (depending on timestamp), not new.
             Timber.w("Duplicate receipt of post not handled yet.");
@@ -240,7 +248,7 @@ public class PostsManager {
 
                 ArrayList<Post> posts = new ArrayList<Post>();
                 posts.add(post);
-                bus.send(new AddPostsEvent(posts, 0, true));
+                bus.send(new AddPostsEvent(new ArrayList<Post>(posts), 0, true));
 
                 singleSubscriber.onSuccess(post);
             }
