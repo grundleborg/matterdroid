@@ -409,7 +409,7 @@ public class MainActivity extends NaviAppCompatActivity {
         ListIterator<Post> newPostsIterator = newPosts.listIterator(newPosts.size());
         while (newPostsIterator.hasPrevious()) {
             final Post post = newPostsIterator.previous();
-            if (previousPost != null && previousPost.userId.equals(post.userId)) {
+            if (previousPost != null && previousPost.userId.equals(post.userId) && previousPost.createAt + 900000 > post.createAt) {
                 // The previous post has the same props. Insert a sub post.
                 newPostItems.add(0, new PostBasicSubItem(post));
             } else {
