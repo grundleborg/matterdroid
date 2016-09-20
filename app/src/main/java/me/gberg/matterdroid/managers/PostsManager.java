@@ -119,7 +119,7 @@ public class PostsManager {
     }
 
     public boolean loadMorePosts() {
-        if (posts.size() < 1) {
+        if (posts.size() < 2) {
             return false;
         }
         Observable<Response<Posts>> morePostsObservable = teamApi.postsBefore(team.id, channel.id, posts.get(posts.size() - 1).id, 0, 60);
