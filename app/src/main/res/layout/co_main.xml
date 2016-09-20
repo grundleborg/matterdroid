@@ -5,13 +5,10 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:paddingBottom="@dimen/activity_vertical_margin"
-    android:paddingLeft="@dimen/activity_horizontal_margin"
-    android:paddingRight="@dimen/activity_horizontal_margin"
-    android:paddingTop="@dimen/activity_vertical_margin"
     app:layout_behavior="@string/appbar_scrolling_view_behavior"
     tools:context="me.gberg.matterdroid.activities.MainActivity"
-    tools:showIn="@layout/ac_main">
+    tools:showIn="@layout/ac_main"
+    android:background="@color/primary">
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -23,12 +20,21 @@
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:orientation="vertical"
-            android:layout_weight="1"/>
+            android:layout_weight="1"
+            android:paddingBottom="6dp"
+            android:background="@color/colorInverse"/>
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="horizontal">
+            android:orientation="horizontal"
+            android:layout_marginRight="6dp"
+            android:layout_marginLeft="6dp"
+            android:layout_marginTop="6dp"
+            android:layout_marginBottom="6dp"
+            android:paddingLeft="6dp"
+            android:paddingRight="6dp"
+            android:background="@color/colorInverse">
 
             <EditText
                 android:id="@+id/co_main_new_message"

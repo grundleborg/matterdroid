@@ -4,12 +4,14 @@
     android:orientation="horizontal"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:paddingLeft="54dp">
+    android:paddingRight="@dimen/activity_horizontal_margin"
+    android:paddingLeft="@dimen/activity_horizontal_margin">
 
     <me.gberg.matterdroid.utils.ui.HtmlTextView
         android:id="@+id/it_message_text"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:padding="4dp"/>
+        android:padding="4dp"
+        android:layout_marginLeft="54dp"/>
 
 </LinearLayout>
