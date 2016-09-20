@@ -5,16 +5,16 @@ import com.google.gson.Gson;
 public class PostedMessage extends  WebSocketMessage {
     public static PostedMessage create(Gson gson, String payload) {
         PostedMessage message = gson.fromJson(payload, PostedMessage.class);
-        message.parsedProps = new Props();
-        message.parsedProps.channelDisplayName = message.props.get("channel_display_name");
-        message.parsedProps.channelType = message.props.get("channel_type");
-        message.parsedProps.post = gson.fromJson(message.props.get("post"), Post.class);
-        message.parsedProps.senderName = message.props.get("sender_name");
-        message.parsedProps.teamId = message.props.get("team_id");
+        message.parsedData = new Data();
+        message.parsedData.channelDisplayName = message.data.get("channel_display_name");
+        message.parsedData.channelType = message.data.get("channel_type");
+        message.parsedData.post = gson.fromJson(message.data.get("post"), Post.class);
+        message.parsedData.senderName = message.data.get("sender_name");
+        message.parsedData.teamId = message.data.get("team_id");
         return message;
     }
 
-    public static class Props {
+    public static class Data {
         public String channelDisplayName;
         public String channelType;
         public Post post;
@@ -22,6 +22,6 @@ public class PostedMessage extends  WebSocketMessage {
         public String teamId;
     }
 
-    public Props parsedProps;
+    public Data parsedData;
 }
 

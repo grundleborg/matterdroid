@@ -119,7 +119,10 @@ public class PostsManager {
                 });
     }
 
-    public void loadMorePosts() {
+    public boolean loadMorePosts() {
+        if (posts.size() < 1) {
+            return false;
+        }
         Observable<Response<Posts>> morePostsObservable = teamApi.postsBefore(team.id, channel.id, posts.get(posts.size() - 1).id, 0, 60);
         morePostsObservable.subscribeOn(Schedulers.newThread())
                 .observeOn(Schedulers.computation())
@@ -157,6 +160,7 @@ public class PostsManager {
                         }
                     }
                 });
+        return true;
     }
 
     public void emitMessages() {
@@ -169,7 +173,7 @@ public class PostsManager {
             return;
         }
 
-        Post post = message.parsedProps.post;
+        Post post = message.parsedData.post;
         parseMarkdown(post);
 
         applyNewPost(post);
@@ -239,7 +243,7 @@ public class PostsManager {
         }).subscribeOn(Schedulers.computation()).subscribe();
 
         Observable<Response<Post>> createPostObservable = teamApi.createPost(team.id, channel.id, post);
-        createPostObservable.delay(10, TimeUnit.SECONDS).subscribeOn(Schedulers.newThread())
+        createPostObservable.subscribeOn(Schedulers.newThread())
                 .observeOn(Schedulers.computation())
                 .subscribe(new Subscriber<Response<Post>>() {
                     @Override

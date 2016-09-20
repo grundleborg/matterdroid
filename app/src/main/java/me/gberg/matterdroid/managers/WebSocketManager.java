@@ -77,8 +77,8 @@ public class WebSocketManager implements WebSocketListener {
 
         // Message received. Parse it and emit the appropriate event on the bus.
         WebSocketMessage message = gson.fromJson(payload, WebSocketMessage.class);
-        if (message.action != null) {
-            switch (message.action) {
+        if (message.event != null) {
+            switch (message.event) {
                 case "posted":
                     PostedMessage postedMessage = PostedMessage.create(gson, payload);
                     bus.sendWebSocketBus(postedMessage);
@@ -92,7 +92,7 @@ public class WebSocketManager implements WebSocketListener {
                     bus.sendWebSocketBus(postDeletedMessage);
                     break;
                 default:
-                    Timber.w("Message received with unhandled action: " + message.action);
+                    Timber.w("Message received with unhandled action: " + message.event);
                     break;
             }
         }

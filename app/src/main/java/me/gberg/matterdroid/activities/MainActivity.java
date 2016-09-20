@@ -286,10 +286,10 @@ public class MainActivity extends NaviAppCompatActivity {
             @Override
             public void onLoadMore(final int currentPage) {
                 Timber.v("onLoadMore() noMoreScrollback: " + noMoreScrollBack);
-                if (!noMoreScrollBack) {
+                boolean canLoadMore = postsManager.loadMorePosts();
+                if (!noMoreScrollBack && canLoadMore) {
                     footerAdapter.clear();
                     footerAdapter.add(new ProgressItem().withEnabled(false));
-                    postsManager.loadMorePosts();
                 }
             }
         };
