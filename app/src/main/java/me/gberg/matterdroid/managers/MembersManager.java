@@ -87,4 +87,8 @@ public class MembersManager {
                     }
                 });
     }
+
+    public final Member getMember(final String id) {
+        return members.get(id);
+    }
 }

@@ -413,7 +413,7 @@ public class MainActivity extends NaviAppCompatActivity {
                 // The previous post has the same props. Insert a sub post.
                 newPostItems.add(0, new PostBasicSubItem(post));
             } else {
-                newPostItems.add(0, new PostBasicTopItem(post, profileImagePicasso));
+                newPostItems.add(0, new PostBasicTopItem(post, profileImagePicasso, membersManager.getMember(post.userId)));
             }
             previousPost = post;
         }

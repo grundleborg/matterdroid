@@ -3,9 +3,12 @@ package me.gberg.matterdroid.adapters.items;
 import android.support.v7.widget.RecyclerView;
 import android.view.View;
 import android.widget.ImageView;
+import android.widget.TextView;
 
 import com.mikepenz.fastadapter.utils.ViewHolderFactory;
 
+import org.joda.time.DateTime;
+import org.joda.time.format.DateTimeFormat;
 import org.sufficientlysecure.htmltextview.HtmlHttpImageGetter;
 
 import java.util.List;
@@ -13,6 +16,7 @@ import java.util.List;
 import butterknife.BindView;
 import butterknife.ButterKnife;
 import me.gberg.matterdroid.R;
+import me.gberg.matterdroid.model.Member;
 import me.gberg.matterdroid.model.Post;
 import me.gberg.matterdroid.utils.picasso.ProfileImagePicasso;
 import me.gberg.matterdroid.utils.ui.HtmlTextView;
@@ -20,10 +24,12 @@ import me.gberg.matterdroid.utils.ui.HtmlTextViewLinkMovementMethod;
 
 public class PostBasicTopItem extends PostItem<PostBasicTopItem, PostBasicTopItem.ViewHolder> {
     private final ProfileImagePicasso picasso;
+    private final Member member;
 
-    public PostBasicTopItem(final Post post, final ProfileImagePicasso picasso) {
+    public PostBasicTopItem(final Post post, final ProfileImagePicasso picasso, final Member member) {
         super(post);
         this.picasso = picasso;
+        this.member = member;
     }
 
     @Override
@@ -40,6 +46,11 @@ public class PostBasicTopItem extends PostItem<PostBasicTopItem, PostBasicTopIte
     public void bindView(ViewHolder viewHolder, List payloads) {
         super.bindView(viewHolder, payloads);
 
+        viewHolder.username.setText("@" + member.username);
+
+        DateTime time = new DateTime(post.createAt);
+        viewHolder.time.setText(time.toString(DateTimeFormat.forPattern("HH:mm")));
+
         viewHolder.body.setHtml(post.markdown, viewHolder.imageGetter);
         picasso.loadInto(post.userId, viewHolder.userIcon);
     }
@@ -51,6 +62,12 @@ public class PostBasicTopItem extends PostItem<PostBasicTopItem, PostBasicTopIte
 
         @BindView(R.id.it_message_user_icon)
         ImageView userIcon;
+
+        @BindView(R.id.it_post_basic_top_username)
+        TextView username;
+
+        @BindView(R.id.it_post_basic_top_time)
+        TextView time;
 
         HtmlHttpImageGetter imageGetter;
 
