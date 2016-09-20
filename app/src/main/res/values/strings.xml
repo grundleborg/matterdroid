@@ -25,6 +25,9 @@
     <string name="title_activity_main">MatterDroid</string>
 
     <!-- Content: Main -->
+    <string name="it_channels_header_public">Channels</string>
+    <string name="it_channels_header_private">Private Groups</string>
+    <string name="it_channels_header_dm">Direct Messages</string>
 
     <!-- Menu: Main -->
     <string name="me_main_about_text">About Matterdroid</string>

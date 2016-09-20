@@ -27,6 +27,7 @@ import com.mikepenz.iconics.context.IconicsContextWrapper;
 import com.mikepenz.materialdrawer.Drawer;
 import com.mikepenz.materialdrawer.DrawerBuilder;
 import com.mikepenz.materialdrawer.model.PrimaryDrawerItem;
+import com.mikepenz.materialdrawer.model.SecondaryDrawerItem;
 import com.mikepenz.materialdrawer.model.interfaces.IDrawerItem;
 import com.trello.navi.component.support.NaviAppCompatActivity;
 import com.trello.rxlifecycle.LifecycleProvider;
@@ -169,9 +170,13 @@ public class MainActivity extends NaviAppCompatActivity {
                 .withOnDrawerItemClickListener(new Drawer.OnDrawerItemClickListener() {
                     @Override
                     public boolean onItemClick(final View view, final int position, final IDrawerItem drawerItem) {
-                        onChannelSelected(drawerItem.getIdentifier());
-                        drawer.closeDrawer();
-                        return true;
+                        if (drawerItem instanceof SecondaryDrawerItem) {
+                            onChannelSelected(drawerItem.getIdentifier());
+                            drawer.closeDrawer();
+                            return true;
+                        } else {
+                            return true;
+                        }
                     }
                 })
                 .build();
@@ -331,13 +336,48 @@ public class MainActivity extends NaviAppCompatActivity {
         // Success.
         this.channels = event.getChannels();
 
-        for (Channel channel: channels.channels) {
-            drawerAdapter.add(new PrimaryDrawerItem()
+        drawerAdapter.clear();
+
+        List<Channel> publicChannels = new ArrayList<>();
+        List<Channel> privateChannels = new ArrayList<>();
+        List<Channel> dmChannels = new ArrayList<>();
+
+        for (final Channel channel : channels.channels) {
+            if (channel.type.equals("O")) {
+                publicChannels.add(channel);
+            } else if (channel.type.equals("P")) {
+                privateChannels.add(channel);
+            } else if (channel.type.equals("D")) {
+                dmChannels.add(channel);
+            } else {
+                publicChannels.add(channel);
+            }
+        }
+
+        drawerAdapter.add(new PrimaryDrawerItem().withName(R.string.it_channels_header_public));
+        for (final Channel channel : publicChannels) {
+            drawerAdapter.add(new SecondaryDrawerItem()
+                    .withName(channel.displayName)
                     .withIdentifier(channels.channels.indexOf(channel))
-                    .withName(channel.displayName));
+            );
+        }
+
+        drawerAdapter.add(new PrimaryDrawerItem().withName(R.string.it_channels_header_private));
+        for (final Channel channel : privateChannels) {
+            drawerAdapter.add(new SecondaryDrawerItem()
+                    .withName(channel.displayName)
+                    .withIdentifier(channels.channels.indexOf(channel))
+            );
+        }
+
+        drawerAdapter.add(new PrimaryDrawerItem().withName(R.string.it_channels_header_dm));
+        for (final Channel channel : dmChannels) {
+            drawerAdapter.add(new SecondaryDrawerItem()
+                    .withName(channel.displayName)
+                    .withIdentifier(channels.channels.indexOf(channel))
+            );
         }
     }
-
     private void handleAddPostsEvent(final AddPostsEvent event) {
         Timber.v("handleAddPostsEvent()");
 

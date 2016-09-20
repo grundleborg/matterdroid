@@ -1,5 +1,8 @@
 package me.gberg.matterdroid.managers;
 
+import java.util.Collections;
+import java.util.Comparator;
+
 import me.gberg.matterdroid.api.TeamAPI;
 import me.gberg.matterdroid.events.ChannelsEvent;
 import me.gberg.matterdroid.events.TeamsListEvent;
@@ -58,9 +61,27 @@ public class ChannelsManager {
                         }
 
                         // Request is successful.
-                        ChannelsEvent event = new ChannelsEvent(response.body());
-                        channels = event.getChannels();
-                        bus.send(event);
+                        Channels channels = response.body();
+                        Collections.sort(channels.channels, new Comparator<Channel>() {
+                            public int compare(Channel c1, Channel c2){
+                                if (c1.type.equals(c2.type)) {
+                                    // Same type. Compare based on name.
+                                    return c1.displayName.compareTo(c2.displayName);
+                                }
+
+                                // Different types. Sort based on type.
+                                if (c1.type.equals("O")) {
+                                    return -1;
+                                } else if (c2.type.equals("O")) {
+                                    return 1;
+                                } else if (c1.type.equals("P")) {
+                                    return -1;
+                                } else {
+                                    return 1;
+                                }
+                            }
+                        });
+                        bus.send(new ChannelsEvent(channels));
                     }
                 });
     }
