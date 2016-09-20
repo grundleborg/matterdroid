@@ -167,6 +167,11 @@ public class PostsManager {
     }
 
     public void handlePostedMessage(final PostedMessage message) {
+        if (channel == null) {
+            // We aren't listening to any channel at the momnet.
+            return;
+        }
+
         if (!message.channelId.equals(channel.id)) {
             // Message does not belong to the current channel.
             return;
