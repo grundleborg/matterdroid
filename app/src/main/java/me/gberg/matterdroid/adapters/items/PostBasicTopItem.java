@@ -16,20 +16,20 @@ import java.util.List;
 import butterknife.BindView;
 import butterknife.ButterKnife;
 import me.gberg.matterdroid.R;
-import me.gberg.matterdroid.model.Member;
 import me.gberg.matterdroid.model.Post;
+import me.gberg.matterdroid.model.User;
 import me.gberg.matterdroid.utils.picasso.ProfileImagePicasso;
 import me.gberg.matterdroid.utils.ui.HtmlTextView;
 import me.gberg.matterdroid.utils.ui.HtmlTextViewLinkMovementMethod;
 
 public class PostBasicTopItem extends PostItem<PostBasicTopItem, PostBasicTopItem.ViewHolder> {
     private final ProfileImagePicasso picasso;
-    private final Member member;
+    private final User user;
 
-    public PostBasicTopItem(final Post post, final ProfileImagePicasso picasso, final Member member) {
+    public PostBasicTopItem(final Post post, final ProfileImagePicasso picasso, final User user) {
         super(post);
         this.picasso = picasso;
-        this.member = member;
+        this.user = user;
     }
 
     @Override
@@ -46,7 +46,7 @@ public class PostBasicTopItem extends PostItem<PostBasicTopItem, PostBasicTopIte
     public void bindView(ViewHolder viewHolder, List payloads) {
         super.bindView(viewHolder, payloads);
 
-        viewHolder.username.setText("@" + member.username);
+        viewHolder.username.setText("@" + user.username);
 
         DateTime time = new DateTime(post.createAt);
         viewHolder.time.setText(time.toString(DateTimeFormat.forPattern("HH:mm")));

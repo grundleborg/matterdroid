@@ -5,4 +5,5 @@ package me.gberg.matterdroid.model;
  */
 public class User {
     public String id;
+    public String username;
 }

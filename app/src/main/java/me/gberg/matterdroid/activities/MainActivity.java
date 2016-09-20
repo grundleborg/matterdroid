@@ -37,7 +37,6 @@ import com.trello.rxlifecycle.navi.NaviLifecycle;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.ListIterator;
-import java.util.Map;
 
 import javax.inject.Inject;
 
@@ -54,16 +53,18 @@ import me.gberg.matterdroid.events.AddPostsEvent;
 import me.gberg.matterdroid.events.ChannelsEvent;
 import me.gberg.matterdroid.events.MembersEvent;
 import me.gberg.matterdroid.events.RemovePostEvent;
+import me.gberg.matterdroid.events.UsersEvent;
 import me.gberg.matterdroid.managers.ChannelsManager;
 import me.gberg.matterdroid.managers.MembersManager;
 import me.gberg.matterdroid.managers.PostsManager;
 import me.gberg.matterdroid.managers.SessionManager;
+import me.gberg.matterdroid.managers.UsersManager;
 import me.gberg.matterdroid.managers.WebSocketManager;
 import me.gberg.matterdroid.model.APIError;
 import me.gberg.matterdroid.model.Channel;
 import me.gberg.matterdroid.model.Channels;
-import me.gberg.matterdroid.model.Member;
 import me.gberg.matterdroid.model.Post;
+import me.gberg.matterdroid.model.Users;
 import me.gberg.matterdroid.utils.picasso.ProfileImagePicasso;
 import me.gberg.matterdroid.utils.rx.Bus;
 import okhttp3.OkHttpClient;
@@ -104,6 +105,9 @@ public class MainActivity extends NaviAppCompatActivity {
     WebSocketManager webSocketManager;
 
     @Inject
+    UsersManager usersManager;
+
+    @Inject
     OkHttpClient httpClient;
 
     private final LifecycleProvider<ActivityEvent> provider
@@ -114,6 +118,7 @@ public class MainActivity extends NaviAppCompatActivity {
     private IItemAdapter<IDrawerItem> drawerAdapter;
     private Channels channels;
     private boolean horribleHackShouldTriggerEmitPosts = false;
+    private Users users;
 
     private Channel channel;
     private FastItemAdapter<IItem> postsAdapter;
@@ -155,6 +160,8 @@ public class MainActivity extends NaviAppCompatActivity {
                             handleRemovePostEvent((RemovePostEvent) event);
                         } else if (event instanceof MembersEvent) {
                             handleMembersEvent((MembersEvent) event);
+                        } else if (event instanceof UsersEvent) {
+                            handleUsersEvent((UsersEvent) event);
                         }
                     }
                 });
@@ -200,6 +207,8 @@ public class MainActivity extends NaviAppCompatActivity {
         webSocketManager.connect();
 
         channelsManager.loadChannels();
+
+        usersManager.loadUsers();
 
         // Load saved instance state.
         if (savedInstanceState != null) {
@@ -384,7 +393,7 @@ public class MainActivity extends NaviAppCompatActivity {
     private void handleAddPostsEvent(final AddPostsEvent event) {
         Timber.v("handleAddPostsEvent()");
 
-        if (!membersManager.isPopulated()) {
+        if (users == null) {
             Timber.v("not bothering as members manager is not yet populated.");
             horribleHackShouldTriggerEmitPosts = true;
             return;
@@ -422,7 +431,7 @@ public class MainActivity extends NaviAppCompatActivity {
                 // The previous post has the same props. Insert a sub post.
                 newPostItems.add(0, new PostBasicSubItem(post));
             } else {
-                newPostItems.add(0, new PostBasicTopItem(post, profileImagePicasso, membersManager.getMember(post.userId)));
+                newPostItems.add(0, new PostBasicTopItem(post, profileImagePicasso, users.users.get(post.userId)));
             }
             previousPost = post;
         }
@@ -473,6 +482,16 @@ public class MainActivity extends NaviAppCompatActivity {
         Timber.i("Members for channel retrieved: "+event.getMembersCount());
 
         if (postsAdapter.getAdapterItemCount() == 0 && horribleHackShouldTriggerEmitPosts) {
+            postsManager.emitMessages();
+            horribleHackShouldTriggerEmitPosts = false;
+        }
+    }
+
+    private void handleUsersEvent(UsersEvent usersEvent) {
+        Timber.v("handleUsersEvent()");
+        users = usersEvent.getUsers();
+
+        if (horribleHackShouldTriggerEmitPosts) {
             postsManager.emitMessages();
             horribleHackShouldTriggerEmitPosts = false;
         }

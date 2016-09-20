@@ -5,11 +5,13 @@ import com.google.gson.Gson;
 import dagger.Module;
 import dagger.Provides;
 import me.gberg.matterdroid.api.TeamAPI;
+import me.gberg.matterdroid.api.UserAPI;
 import me.gberg.matterdroid.di.scopes.TeamScope;
 import me.gberg.matterdroid.managers.ChannelsManager;
 import me.gberg.matterdroid.managers.MembersManager;
 import me.gberg.matterdroid.managers.PostsManager;
 import me.gberg.matterdroid.managers.SessionManager;
+import me.gberg.matterdroid.managers.UsersManager;
 import me.gberg.matterdroid.managers.WebSocketManager;
 import me.gberg.matterdroid.model.Team;
 import me.gberg.matterdroid.utils.retrofit.ErrorParser;
@@ -60,5 +62,11 @@ public class TeamModule {
     WebSocketManager providesWebSocketManager(Bus bus, Team team, Gson gson,
                                               SessionManager sessionManager, ErrorParser errorParser) {
         return new WebSocketManager(bus, team, gson, sessionManager, errorParser);
+    }
+
+    @Provides
+    @TeamScope
+    UsersManager providesUsersManager(Team team, UserAPI userAPI, Bus bus, ErrorParser errorParser) {
+        return new UsersManager(team, userAPI, bus, errorParser);
     }
 }
