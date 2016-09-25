@@ -100,6 +100,7 @@ public class MainActivityPresenter extends AbstractActivityPresenter<MainActivit
                     public void call(Object event) {
                         if (event instanceof ChannelsEvent) {
                             handleChannelsEvent((ChannelsEvent) event);
+                            updateDrawer();
                         } else if (event instanceof AddPostsEvent) {
                             handleAddPostsEvent((AddPostsEvent) event);
                         } else if (event instanceof RemovePostEvent) {
@@ -198,6 +199,15 @@ public class MainActivityPresenter extends AbstractActivityPresenter<MainActivit
 
         // Success.
         this.channels = event.getChannels();
+    }
+
+    private void updateDrawer() {
+        Timber.v("updateDrawer()");
+
+        // Check all the state we need for this has been received.
+        if (this.channels == null) {
+            Timber.v("Incomplete state so not updating drawer.");
+        }
 
         drawerAdapter.clear();
 
@@ -237,7 +247,7 @@ public class MainActivityPresenter extends AbstractActivityPresenter<MainActivit
         for (final Channel channel : dmChannels) {
             drawerAdapter.add(new ChannelDrawerItem()
                     .withChannel(channel)
-                    .withName(channel.displayName)
+                    .withName("<Unknown User>")
             );
         }
     }
@@ -278,11 +288,10 @@ public class MainActivityPresenter extends AbstractActivityPresenter<MainActivit
         ListIterator<Post> newPostsIterator = newPosts.listIterator(newPosts.size());
         while (newPostsIterator.hasPrevious()) {
             final Post post = newPostsIterator.previous();
-            if (previousPost != null && previousPost.userId.equals(post.userId) && previousPost.createAt + 900000 > post.createAt) {
-                // The previous post has the same props. Insert a sub post.
-                newPostItems.add(0, new PostBasicSubItem(post));
-            } else {
+            if (shouldStartNewPostBlock(previousPost, post)) {
                 newPostItems.add(0, new PostBasicTopItem(post, profileImagePicasso, users.users.get(post.userId)));
+            } else {
+                newPostItems.add(0, new PostBasicSubItem(post));
             }
             previousPost = post;
         }
@@ -305,6 +314,25 @@ public class MainActivityPresenter extends AbstractActivityPresenter<MainActivit
 
         // Now the editing of the adapter contents is complete, do the autoscroll if appropriate.
         getView().autoScrollPostsView();
+    }
+
+    private boolean shouldStartNewPostBlock(final Post previousPost, final Post thisPost) {
+        // No previous post.
+        if (previousPost == null) {
+            return true;
+        }
+
+        // Different user on the previous post.
+        if (!previousPost.userId.equals(thisPost.userId)) {
+            return true;
+        }
+
+        // Too much time past since last post.
+        if (previousPost.createAt + 900000 < thisPost.createAt) {
+            return true;
+        }
+
+        return false;
     }
 
     private void handleRemovePostEvent(final RemovePostEvent event) {
