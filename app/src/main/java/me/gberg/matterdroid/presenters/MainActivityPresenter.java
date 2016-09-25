@@ -9,7 +9,6 @@ import com.mikepenz.fastadapter.adapters.FooterAdapter;
 import com.mikepenz.fastadapter_extensions.items.ProgressItem;
 import com.mikepenz.materialdrawer.Drawer;
 import com.mikepenz.materialdrawer.model.PrimaryDrawerItem;
-import com.mikepenz.materialdrawer.model.SecondaryDrawerItem;
 import com.mikepenz.materialdrawer.model.interfaces.IDrawerItem;
 
 import java.util.ArrayList;
@@ -19,6 +18,7 @@ import java.util.ListIterator;
 import javax.inject.Inject;
 
 import me.gberg.matterdroid.R;
+import me.gberg.matterdroid.activities.ChannelDrawerItem;
 import me.gberg.matterdroid.activities.MainActivity;
 import me.gberg.matterdroid.adapters.items.PostBasicSubItem;
 import me.gberg.matterdroid.adapters.items.PostBasicTopItem;
@@ -219,25 +219,25 @@ public class MainActivityPresenter extends AbstractActivityPresenter<MainActivit
 
         drawerAdapter.add(new PrimaryDrawerItem().withName(R.string.it_channels_header_public));
         for (final Channel channel : publicChannels) {
-            drawerAdapter.add(new SecondaryDrawerItem()
+            drawerAdapter.add(new ChannelDrawerItem()
+                    .withChannel(channel)
                     .withName(channel.displayName)
-                    .withIdentifier(channels.channels.indexOf(channel))
             );
         }
 
         drawerAdapter.add(new PrimaryDrawerItem().withName(R.string.it_channels_header_private));
         for (final Channel channel : privateChannels) {
-            drawerAdapter.add(new SecondaryDrawerItem()
+            drawerAdapter.add(new ChannelDrawerItem()
+                    .withChannel(channel)
                     .withName(channel.displayName)
-                    .withIdentifier(channels.channels.indexOf(channel))
             );
         }
 
         drawerAdapter.add(new PrimaryDrawerItem().withName(R.string.it_channels_header_dm));
         for (final Channel channel : dmChannels) {
-            drawerAdapter.add(new SecondaryDrawerItem()
+            drawerAdapter.add(new ChannelDrawerItem()
+                    .withChannel(channel)
                     .withName(channel.displayName)
-                    .withIdentifier(channels.channels.indexOf(channel))
             );
         }
     }
@@ -353,8 +353,8 @@ public class MainActivityPresenter extends AbstractActivityPresenter<MainActivit
     }
 
     public boolean drawerItemClicked(final Drawer drawer, long id, final IDrawerItem drawerItem) {
-        if (drawerItem instanceof SecondaryDrawerItem) {
-            channel = channels.channels.get((int) id);
+        if (drawerItem instanceof ChannelDrawerItem) {
+            channel = ((ChannelDrawerItem) drawerItem).getChannel();
 
             // Set activity title.
             getView().setTitle(channel.displayName);
