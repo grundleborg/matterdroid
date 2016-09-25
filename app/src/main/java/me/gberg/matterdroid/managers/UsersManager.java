@@ -36,7 +36,7 @@ public class UsersManager {
 
     public void loadUsers() {
         users = null;
-        Observable<Response<Map<String, User>>> initialLoadObservable = userAPI.users(team.id);
+        Observable<Response<Map<String, User>>> initialLoadObservable = userAPI.users(team.id());
         initialLoadObservable.subscribeOn(Schedulers.newThread())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(new Subscriber<Response<Map<String, User>>>() {
@@ -60,8 +60,9 @@ public class UsersManager {
                         }
 
                         // Request is successful.
-                        Users users = new Users();
-                        users.users = response.body();
+                        Users users = Users.builder()
+                                .setUsers(response.body())
+                                .build();
                         bus.send(new UsersEvent(users));
                     }
                 });

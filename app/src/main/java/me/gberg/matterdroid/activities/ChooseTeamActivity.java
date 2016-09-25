@@ -131,7 +131,7 @@ public class ChooseTeamActivity extends AppCompatActivity {
     private void handleTeamsListEvent(final TeamsListEvent event) {
         if (event.isApiError()) {
             APIError apiError = event.getApiError();
-            Timber.e("Unrecognised HTTP response code: " + apiError.statusCode + " with error id " + apiError.id);
+            Timber.e("Unrecognised HTTP response code: " + apiError.statusCode() + " with error id " + apiError.id());
             return;
         }
 

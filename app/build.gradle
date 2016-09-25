@@ -102,4 +102,10 @@ dependencies {
     compile('com.mikepenz:aboutlibraries:5.8.1@aar') {
         transitive = true
     }
+
+    // Immutables
+    apt "org.immutables:value:2.3" // for annotation processor
+    provided "org.immutables:value:2.3:annotations" // annotation-only artifact
+    provided "org.immutables:builder:2.3" // there are only annotations anyway
+    provided "org.immutables:gson:2.3:annotations" // annotation-only artifact
 }

@@ -180,7 +180,7 @@ public class MainActivityPresenter extends AbstractActivityPresenter<MainActivit
     protected void onSaveInstanceState(final Bundle bundle) {
         Timber.v("onSaveInstanceState()");
         if (channel != null) {
-            bundle.putString(STATE_CURRENT_CHANNEL, channel.id);
+            bundle.putString(STATE_CURRENT_CHANNEL, channel.id());
         }
     }
 
@@ -188,7 +188,7 @@ public class MainActivityPresenter extends AbstractActivityPresenter<MainActivit
         Timber.v("handleChannelsEvent()");
         if (event.isApiError()) {
             APIError apiError = event.getApiError();
-            Timber.e("Unrecognised HTTP response code: " + apiError.statusCode + " with error id " + apiError.id);
+            Timber.e("Unrecognised HTTP response code: " + apiError.statusCode() + " with error id " + apiError.id());
             return;
         } else if (event.isError()) {
             // Unhandled error. Log it.
@@ -215,12 +215,12 @@ public class MainActivityPresenter extends AbstractActivityPresenter<MainActivit
         List<Channel> privateChannels = new ArrayList<>();
         List<Channel> dmChannels = new ArrayList<>();
 
-        for (final Channel channel : channels.channels) {
-            if (channel.type.equals("O")) {
+        for (final Channel channel : channels.channels()) {
+            if (channel.type().equals("O")) {
                 publicChannels.add(channel);
-            } else if (channel.type.equals("P")) {
+            } else if (channel.type().equals("P")) {
                 privateChannels.add(channel);
-            } else if (channel.type.equals("D")) {
+            } else if (channel.type().equals("D")) {
                 dmChannels.add(channel);
             } else {
                 publicChannels.add(channel);
@@ -231,7 +231,7 @@ public class MainActivityPresenter extends AbstractActivityPresenter<MainActivit
         for (final Channel channel : publicChannels) {
             drawerAdapter.add(new ChannelDrawerItem()
                     .withChannel(channel)
-                    .withName(channel.displayName)
+                    .withName(channel.displayName())
             );
         }
 
@@ -239,7 +239,7 @@ public class MainActivityPresenter extends AbstractActivityPresenter<MainActivit
         for (final Channel channel : privateChannels) {
             drawerAdapter.add(new ChannelDrawerItem()
                     .withChannel(channel)
-                    .withName(channel.displayName)
+                    .withName(channel.displayName())
             );
         }
 
@@ -289,7 +289,7 @@ public class MainActivityPresenter extends AbstractActivityPresenter<MainActivit
         while (newPostsIterator.hasPrevious()) {
             final Post post = newPostsIterator.previous();
             if (shouldStartNewPostBlock(previousPost, post)) {
-                newPostItems.add(0, new PostBasicTopItem(post, profileImagePicasso, users.users.get(post.userId)));
+                newPostItems.add(0, new PostBasicTopItem(post, profileImagePicasso, users.users().get(post.userId())));
             } else {
                 newPostItems.add(0, new PostBasicSubItem(post));
             }
@@ -323,12 +323,12 @@ public class MainActivityPresenter extends AbstractActivityPresenter<MainActivit
         }
 
         // Different user on the previous post.
-        if (!previousPost.userId.equals(thisPost.userId)) {
+        if (!previousPost.userId().equals(thisPost.userId())) {
             return true;
         }
 
         // Too much time past since last post.
-        if (previousPost.createAt + 900000 < thisPost.createAt) {
+        if (previousPost.createAt() + 900000 < thisPost.createAt()) {
             return true;
         }
 
@@ -344,7 +344,7 @@ public class MainActivityPresenter extends AbstractActivityPresenter<MainActivit
         Timber.v("handleMembersEvent()");
         if (event.isApiError()) {
             APIError apiError = event.getApiError();
-            Timber.e("Unrecognised HTTP response code: " + apiError.statusCode + " with error id " + apiError.id);
+            Timber.e("Unrecognised HTTP response code: " + apiError.statusCode() + " with error id " + apiError.id());
             return;
         } else if (event.isError()) {
             // Unhandled error. Log it.
@@ -385,7 +385,7 @@ public class MainActivityPresenter extends AbstractActivityPresenter<MainActivit
             channel = ((ChannelDrawerItem) drawerItem).getChannel();
 
             // Set activity title.
-            getView().setTitle(channel.displayName);
+            getView().setTitle(channel.displayName());
 
             // Clear the message adapter.
             footerAdapter.clear();

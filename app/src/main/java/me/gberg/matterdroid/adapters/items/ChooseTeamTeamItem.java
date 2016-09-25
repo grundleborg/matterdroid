@@ -43,7 +43,7 @@ public class ChooseTeamTeamItem extends AbstractItem<ChooseTeamTeamItem, ChooseT
     public void bindView(ViewHolder viewHolder, List payloads) {
         super.bindView(viewHolder, payloads);
 
-        viewHolder.name.setText(team.displayName);
+        viewHolder.name.setText(team.displayName());
     }
 
     protected static class ViewHolder extends RecyclerView.ViewHolder {

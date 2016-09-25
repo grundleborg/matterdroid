@@ -46,13 +46,13 @@ public class PostBasicTopItem extends PostItem<PostBasicTopItem, PostBasicTopIte
     public void bindView(ViewHolder viewHolder, List payloads) {
         super.bindView(viewHolder, payloads);
 
-        viewHolder.username.setText("@" + user.username);
+        viewHolder.username.setText("@" + user.username());
 
-        DateTime time = new DateTime(post.createAt);
+        DateTime time = new DateTime(post.createAt());
         viewHolder.time.setText(time.toString(DateTimeFormat.forPattern("HH:mm")));
 
-        viewHolder.body.setHtml(post.markdown, viewHolder.imageGetter);
-        picasso.loadInto(post.userId, viewHolder.userIcon);
+        viewHolder.body.setHtml(post.markdown(), viewHolder.imageGetter);
+        picasso.loadInto(post.userId(), viewHolder.userIcon);
     }
 
     protected static class ViewHolder extends RecyclerView.ViewHolder {

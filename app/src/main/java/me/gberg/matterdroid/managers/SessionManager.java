@@ -168,7 +168,7 @@ public class SessionManager {
                         Timber.i("Successfully retrieved the ME object. Token is still live.");
                         User user = response.body();
 
-                        Timber.i("User ID: " + user.id);
+                        Timber.i("User ID: " + user.id());
                         app.createUserComponent(user);
 
                         bus.send(new TokenCheckEvent(response.body()));
@@ -186,7 +186,11 @@ public class SessionManager {
         final ErrorParser errorParser = new ErrorParser(retrofit);
 
         LoginAPI loginService = retrofit.create(LoginAPI.class);
-        LoginRequest loginRequest = new LoginRequest(email, password, null);
+        LoginRequest loginRequest = LoginRequest.builder()
+                .setLoginId(email)
+                .setPassword(password)
+                .setToken(null)
+                .build();
         Observable<Response<User>> loginObservable = loginService.login(loginRequest);
         loginObservable.subscribeOn(Schedulers.newThread())
                 .observeOn(AndroidSchedulers.mainThread())
@@ -213,7 +217,7 @@ public class SessionManager {
 
                         // We have logged in successfully.
                         user = response.body();
-                        Timber.i("Logged in successfully with User ID: " + user.id);
+                        Timber.i("Logged in successfully with User ID: " + user.id());
 
                         // Create the UserComponent.
                         String token = response.headers().get(HttpHeaders.TOKEN);

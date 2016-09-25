@@ -50,7 +50,7 @@ public class TeamsManager {
                         }
 
                         // Request is successful.
-                        bus.send(new TeamsListEvent(response.body().teams));
+                        bus.send(new TeamsListEvent(response.body().teams()));
                     }
                 });
     }

@@ -9,6 +9,7 @@ import javax.inject.Singleton;
 
 import dagger.Module;
 import dagger.Provides;
+import me.gberg.matterdroid.model.GsonAdaptersModel;
 
 @Module
 public class GsonModule {
@@ -16,9 +17,9 @@ public class GsonModule {
     @Provides
     @Singleton
     Gson providesGson() {
-        return Converters.registerAll(
-                new GsonBuilder()
-                        .setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES)
-                ).create();
+        return Converters.registerAll(new GsonBuilder())
+                .setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES)
+                .registerTypeAdapterFactory(new GsonAdaptersModel())
+                .create();
     }
 }

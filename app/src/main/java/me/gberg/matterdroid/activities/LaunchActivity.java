@@ -80,7 +80,7 @@ public class LaunchActivity extends AppCompatActivity {
         if (event.isApiError()) {
             // TODO: Display a visual indication of the API error.
             APIError apiError = event.getApiError();
-            Timber.e("Unrecognised HTTP response code: " + apiError.statusCode + " with error id " + apiError.id);
+            Timber.e("Unrecognised HTTP response code: " + apiError.statusCode() + " with error id " + apiError.id());
             return;
 
         } else if (event.isError()) {

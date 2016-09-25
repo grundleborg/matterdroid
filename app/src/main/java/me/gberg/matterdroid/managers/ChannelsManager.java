@@ -1,7 +1,9 @@
 package me.gberg.matterdroid.managers;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.List;
 
 import me.gberg.matterdroid.api.TeamAPI;
 import me.gberg.matterdroid.events.ChannelsEvent;
@@ -37,7 +39,7 @@ public class ChannelsManager {
     }
 
     public void loadChannels() {
-        Observable<Response<Channels>> observable = teamApi.channels(team.id);
+        Observable<Response<Channels>> observable = teamApi.channels(team.id());
         observable.subscribeOn(Schedulers.newThread())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(new Subscriber<Response<Channels>>() {
@@ -62,26 +64,32 @@ public class ChannelsManager {
 
                         // Request is successful.
                         Channels channels = response.body();
-                        Collections.sort(channels.channels, new Comparator<Channel>() {
+                        List<Channel> channelsMutable = new ArrayList<Channel>();
+                        channelsMutable.addAll(channels.channels());
+                        Collections.sort(channelsMutable, new Comparator<Channel>() {
                             public int compare(Channel c1, Channel c2){
-                                if (c1.type.equals(c2.type)) {
+                                if (c1.type().equals(c2.type())) {
                                     // Same type. Compare based on name.
-                                    return c1.displayName.compareTo(c2.displayName);
+                                    return c1.displayName().compareTo(c2.displayName());
                                 }
 
                                 // Different types. Sort based on type.
-                                if (c1.type.equals("O")) {
+                                if (c1.type().equals("O")) {
                                     return -1;
-                                } else if (c2.type.equals("O")) {
+                                } else if (c2.type().equals("O")) {
                                     return 1;
-                                } else if (c1.type.equals("P")) {
+                                } else if (c1.type().equals("P")) {
                                     return -1;
                                 } else {
                                     return 1;
                                 }
                             }
                         });
-                        bus.send(new ChannelsEvent(channels));
+                        Channels newChannels = Channels.builder()
+                                .from(channels)
+                                .setChannels(channelsMutable)
+                                .build();
+                        bus.send(new ChannelsEvent(newChannels));
                     }
                 });
     }
@@ -91,8 +99,8 @@ public class ChannelsManager {
             return null;
         }
 
-        for (final Channel channel: channels.channels) {
-            if (channel.id.equals(id)) {
+        for (final Channel channel: channels.channels()) {
+            if (channel.id().equals(id)) {
                 return channel;
             }
         }

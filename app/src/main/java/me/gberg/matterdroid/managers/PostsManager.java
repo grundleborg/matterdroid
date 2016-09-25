@@ -18,13 +18,13 @@ import me.gberg.matterdroid.events.AddPostsEvent;
 import me.gberg.matterdroid.events.RemovePostEvent;
 import me.gberg.matterdroid.model.APIError;
 import me.gberg.matterdroid.model.Channel;
+import me.gberg.matterdroid.model.IWebSocketMessage;
 import me.gberg.matterdroid.model.Post;
 import me.gberg.matterdroid.model.PostDeletedMessage;
 import me.gberg.matterdroid.model.PostEditedMessage;
 import me.gberg.matterdroid.model.PostedMessage;
 import me.gberg.matterdroid.model.Posts;
 import me.gberg.matterdroid.model.Team;
-import me.gberg.matterdroid.model.WebSocketMessage;
 import me.gberg.matterdroid.utils.retrofit.ErrorParser;
 import me.gberg.matterdroid.utils.rx.Bus;
 import retrofit2.Response;
@@ -58,9 +58,9 @@ public class PostsManager {
 
         bus.toWebSocketBusObservable()
                 .observeOn(Schedulers.computation())
-                .subscribe(new  Action1<WebSocketMessage>() {
+                .subscribe(new  Action1<IWebSocketMessage>() {
                     @Override
-                    public void call(WebSocketMessage message) {
+                    public void call(IWebSocketMessage message) {
                         if (message instanceof PostedMessage) {
                             handlePostedMessage((PostedMessage) message);
                         } else if (message instanceof PostEditedMessage) {
@@ -80,7 +80,7 @@ public class PostsManager {
         }
 
         // Load the initial set of message for this channel.
-        Observable<Response<Posts>> initialLoadObservable = teamApi.posts(team.id, channel.id, 0, 60);
+        Observable<Response<Posts>> initialLoadObservable = teamApi.posts(team.id(), channel.id(), 0, 60);
         initialLoadObservable.subscribeOn(Schedulers.newThread())
                 .observeOn(Schedulers.computation())
                 .subscribe(new Subscriber<Response<Posts>>() {
@@ -91,7 +91,7 @@ public class PostsManager {
 
                     @Override
                     public void onError(final Throwable e) {
-                        // TODO: Handle error here.
+                        Timber.e(e, "initialLoadObservable threw error.");
                     }
 
                     @Override
@@ -107,11 +107,11 @@ public class PostsManager {
                         // Clear posts list and then populate in order.
                         posts = new ArrayList<Post>();
                         postsMap = new HashMap<String, Post>();
-                        for (String id: response.body().order) {
-                            Post post = response.body().posts.get(id);
-                            parseMarkdown(post);
+                        for (String id: response.body().order()) {
+                            Post post = response.body().posts().get(id);
+                            post = parseMarkdown(post);
                             posts.add(post);
-                            postsMap.put(post.id, post);
+                            postsMap.put(post.id(), post);
                         }
                         bus.send(new AddPostsEvent(new ArrayList<Post>(posts), 0));
                     }
@@ -122,7 +122,7 @@ public class PostsManager {
         if (posts.size() < 2) {
             return false;
         }
-        Observable<Response<Posts>> morePostsObservable = teamApi.postsBefore(team.id, channel.id, posts.get(posts.size() - 1).id, 0, 60);
+        Observable<Response<Posts>> morePostsObservable = teamApi.postsBefore(team.id(), channel.id(), posts.get(posts.size() - 1).id(), 0, 60);
         morePostsObservable.subscribeOn(Schedulers.newThread())
                 .observeOn(Schedulers.computation())
                 .subscribe(new Subscriber<Response<Posts>>() {
@@ -147,15 +147,15 @@ public class PostsManager {
 
                         // Request is successful.
                         List<Post> newPosts = new ArrayList<Post>();
-                        for (String id: response.body().order) {
-                            Post post = response.body().posts.get(id);
-                            parseMarkdown(post);
+                        for (String id: response.body().order()) {
+                            Post post = response.body().posts().get(id);
+                            post = parseMarkdown(post);
                             newPosts.add(post);
                         }
                         bus.send(new AddPostsEvent(new ArrayList<Post>(newPosts), posts.size(), true));
                         posts.addAll(newPosts);
                         for (final Post post: posts) {
-                            postsMap.put(post.id, post);
+                            postsMap.put(post.id(), post);
                         }
                     }
                 });
@@ -180,13 +180,13 @@ public class PostsManager {
             return;
         }
 
-        if (!message.channelId.equals(channel.id)) {
+        if (!message.webSocketMessage().channelId().equals(channel.id())) {
             // Message does not belong to the current channel.
             return;
         }
 
-        Post post = message.parsedData.post;
-        parseMarkdown(post);
+        Post post = message.parsedData().post();
+        post = parseMarkdown(post);
 
         applyNewPost(post);
     }
@@ -195,21 +195,21 @@ public class PostsManager {
         // TODO: What is needed here to enforce correct ordering of posts?
 
         // Check if this is replacing a pending post.
-        if (post.pendingPostId != null && post.pendingPostId.length() > 0) {
+        if (post.pendingPostId() != null && post.pendingPostId().length() > 0) {
             Timber.d("Replacing a pending post.");
-            final Post replacedPost = postsMap.get(post.pendingPostId);
+            final Post replacedPost = postsMap.get(post.pendingPostId());
             if (replacedPost != null) {
                 // There is a pending post to replace.
-                postsMap.remove(post.pendingPostId);
+                postsMap.remove(post.pendingPostId());
                 int removedPosition = posts.indexOf(replacedPost);
                 posts.remove(removedPosition);
                 bus.send(new RemovePostEvent(removedPosition));
             }
         }
 
-        if (!postsMap.containsKey(post.id)) {
+        if (!postsMap.containsKey(post.id())) {
             posts.add(0, post);
-            postsMap.put(post.id, post);
+            postsMap.put(post.id(), post);
 
             List<Post> newPosts = new ArrayList<>();
             newPosts.add(post);
@@ -229,22 +229,21 @@ public class PostsManager {
     }
 
     public void createNewPost(final String message) {
-        final Post post = new Post();
-        post.filenames = null;
-        post.message = message;
-        post.channelId = channel.id;
-        post.pendingPostId = sessionManager.getUser().id + ":" + DateTime.now().getMillis();
-        post.userId = sessionManager.getUser().id;
-        post.createAt = DateTime.now().getMillis();
-        post.parentId = null;
-        post.pending = true;
+        final Post prePost = Post.builder()
+                .setMessage(message)
+                .setChannelId(channel.id())
+                .setPendingPostId(sessionManager.getUser().id() + ":" + DateTime.now().getMillis())
+                .setUserId(sessionManager.getUser().id())
+                .setCreateAt(DateTime.now().getMillis())
+                .setPending(true)
+                .build();
+        final Post post = parseMarkdown(prePost);
 
         Single.create(new Single.OnSubscribe<Post>() {
             @Override
             public void call(final SingleSubscriber<? super Post> singleSubscriber) {
                 posts.add(0, post);
-                postsMap.put(post.pendingPostId, post);
-                parseMarkdown(post);
+                postsMap.put(post.pendingPostId(), post);
 
                 ArrayList<Post> posts = new ArrayList<Post>();
                 posts.add(post);
@@ -254,7 +253,7 @@ public class PostsManager {
             }
         }).subscribeOn(Schedulers.computation()).subscribe();
 
-        Observable<Response<Post>> createPostObservable = teamApi.createPost(team.id, channel.id, post);
+        Observable<Response<Post>> createPostObservable = teamApi.createPost(team.id(), channel.id(), post);
         createPostObservable.subscribeOn(Schedulers.newThread())
                 .observeOn(Schedulers.computation())
                 .subscribe(new Subscriber<Response<Post>>() {
@@ -276,29 +275,36 @@ public class PostsManager {
                             // TODO: Handle API Error here.
                         }
 
-                        if (!post.channelId.equals(channel.id)) {
+                        if (!post.channelId().equals(channel.id())) {
                             // Message does not belong to the current channel.
                             return;
                         }
 
                         Post post = response.body();
-                        parseMarkdown(post);
+                        post = parseMarkdown(post);
                         applyNewPost(post);
                     }
                 });
     }
 
-    private void parseMarkdown(final Post post) {
-        Reader in = new StringReader(post.message);
+    // FIXME: Replace this with the decoding being part of the GSON decode process, or the Post object
+    // initialisation process.
+    private Post parseMarkdown(final Post post) {
+        Reader in = new StringReader(post.message());
         Writer out = new StringWriter();
 
         Markdown md = new Markdown();
         try {
             md.transform(in, out);
-            post.markdown = out.toString();
+            return Post.builder()
+                    .from(post)
+                    .setMarkdown(out.toString())
+                    .build();
         } catch(ParseException e) {
-            Timber.w(e);
-            post.markdown = post.message;
+            return Post.builder()
+                    .from(post)
+                    .setMarkdown(post.message())
+                    .build();
         }
     }
 }

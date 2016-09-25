@@ -35,7 +35,7 @@ public class PostBasicSubItem extends PostItem<PostBasicSubItem, PostBasicSubIte
     public void bindView(ViewHolder viewHolder, List payloads) {
         super.bindView(viewHolder, payloads);
 
-        viewHolder.body.setHtml(post.markdown, viewHolder.imageGetter);
+        viewHolder.body.setHtml(post.markdown(), viewHolder.imageGetter);
     }
 
     protected static class ViewHolder extends RecyclerView.ViewHolder {

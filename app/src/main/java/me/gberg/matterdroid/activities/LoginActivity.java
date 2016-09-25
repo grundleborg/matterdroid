@@ -127,7 +127,7 @@ public class LoginActivity extends AppCompatActivity {
                 setWrongPasswordError();
                 return;
             }
-            Timber.e("Unrecognised HTTP response code: " + apiError.statusCode + " with error id " + apiError.id);
+            Timber.e("Unrecognised HTTP response code: " + apiError.statusCode() + " with error id " + apiError.id());
             return;
         }
 

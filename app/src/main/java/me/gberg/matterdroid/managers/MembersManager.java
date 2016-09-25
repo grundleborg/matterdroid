@@ -47,7 +47,7 @@ public class MembersManager {
         }
 
         // Load the extra info for this channel.
-        Observable<Response<ExtraInfo>> initialLoadObservable = teamApi.extraInfo(team.id, channel.id);
+        Observable<Response<ExtraInfo>> initialLoadObservable = teamApi.extraInfo(team.id(), channel.id());
         initialLoadObservable.subscribeOn(Schedulers.newThread())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(new Subscriber<Response<ExtraInfo>>() {
@@ -72,19 +72,19 @@ public class MembersManager {
 
                         // If the channel ID doesn't match, throw away the stale response.
                         final ExtraInfo body = response.body();
-                        if (!body.id.equals(channel.id)) {
+                        if (!body.id().equals(channel.id())) {
                             return;
                         }
 
                         // Save to the manager.
-                        membersCount = body.memberCount;
+                        membersCount = body.memberCount();
                         members = new HashMap<String, Member>();
-                        for (final Member member: body.members) {
-                            members.put(member.id, member);
+                        for (final Member member: body.members()) {
+                            members.put(member.id(), member);
                         }
 
                         // Request is successful.
-                        bus.send(new MembersEvent(body.id, body.memberCount, body.members));
+                        bus.send(new MembersEvent(body.id(), body.memberCount(), body.members()));
                     }
                 });
     }

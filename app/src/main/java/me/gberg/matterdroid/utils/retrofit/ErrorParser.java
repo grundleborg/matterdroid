@@ -26,7 +26,8 @@ public class ErrorParser {
         try {
             error = converter.convert(response.errorBody());
         } catch (IOException e) {
-            return new APIError();
+            // FIXME: Should this instead return an invalid APIError()?
+            return null;
         }
 
         return error;
