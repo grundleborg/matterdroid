@@ -35,6 +35,8 @@ public class WebSocketManager implements WebSocketListener {
     // FIXME: is this accessed from multiple threads?
     boolean connected = false;
 
+    WebSocket webSocket;
+
     public WebSocketManager(Bus bus, Team team, Gson gson, SessionManager sessionManager,
                             ErrorParser errorParser) {
         this.bus = bus;
@@ -64,9 +66,23 @@ public class WebSocketManager implements WebSocketListener {
         }
     }
 
+    public void disconnect() {
+        Timber.d("disconnect()");
+        if (connected) {
+            try {
+                this.webSocket.close(1000, "Goodbye");
+                this.connected = false;
+            } catch (IOException e) {
+                Timber.e(e, "Failed to close websocket.");
+            }
+        }
+    }
+
     @Override
     public void onOpen(WebSocket webSocket, Response response) {
         Timber.v("onOpen().");
+        this.connected = true;
+        this.webSocket = webSocket;
     }
 
     @Override

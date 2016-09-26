@@ -14,6 +14,7 @@ import com.mikepenz.materialdrawer.model.interfaces.IDrawerItem;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.ListIterator;
+import java.util.concurrent.TimeUnit;
 
 import javax.inject.Inject;
 
@@ -43,6 +44,8 @@ import me.gberg.matterdroid.model.Users;
 import me.gberg.matterdroid.utils.picasso.ProfileImagePicasso;
 import me.gberg.matterdroid.utils.rx.Bus;
 import okhttp3.OkHttpClient;
+import rx.Single;
+import rx.SingleSubscriber;
 import rx.Subscription;
 import rx.android.schedulers.AndroidSchedulers;
 import rx.functions.Action1;
@@ -77,6 +80,7 @@ public class MainActivityPresenter extends AbstractActivityPresenter<MainActivit
     private ProfileImagePicasso profileImagePicasso;
 
     private final Subscription busSubscription;
+    private Subscription webSocketTimeoutSubscription;
 
     @Inject
     public MainActivityPresenter(final Bus bus, final ChannelsManager channelsManager,
@@ -163,11 +167,36 @@ public class MainActivityPresenter extends AbstractActivityPresenter<MainActivit
     @Override
     protected void onResumed() {
         Timber.v("onResumed()");
+
+        if (webSocketTimeoutSubscription != null) {
+            webSocketTimeoutSubscription.unsubscribe();
+            webSocketTimeoutSubscription = null;
+        }
+
+        webSocketManager.connect();
     }
 
     @Override
     protected void onPaused() {
         Timber.v("onPaused()");
+
+        if (webSocketTimeoutSubscription == null) {
+            webSocketTimeoutSubscription = Single.create(new Single.OnSubscribe<Void>() {
+                @Override
+                public void call(final SingleSubscriber<? super Void> singleSubscriber) {
+                    singleSubscriber.onSuccess(null);
+                }
+            })
+            .delay(15, TimeUnit.SECONDS)
+            .subscribe(new Action1<Void>() {
+                @Override
+                public void call(final Void aVoid) {
+                    Timber.v("Unsubscribe Web Socket Single Fired.");
+                    webSocketManager.disconnect();
+                    webSocketTimeoutSubscription = null;
+                }
+            });
+        }
     }
 
     @Override
