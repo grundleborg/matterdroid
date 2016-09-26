@@ -151,7 +151,9 @@ public class MainActivityPresenter extends AbstractActivityPresenter<MainActivit
         }
 
         if (channel != null) {
-            postsManager.emitMessages();
+            if (postsAdapter.getAdapterItemCount() == 0) {
+                postsManager.emitMessages();
+            }
         } else {
             getView().openDrawer();
         }
