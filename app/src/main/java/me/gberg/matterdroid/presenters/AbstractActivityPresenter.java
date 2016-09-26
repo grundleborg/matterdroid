@@ -78,4 +78,5 @@ public abstract class AbstractActivityPresenter<T extends PresentedActivity> {
     protected void onStopped() {}
     protected void onStarted() {}
     protected void onSaveInstanceState(final Bundle bundle) {}
+    public void leaveScope() {}
 }

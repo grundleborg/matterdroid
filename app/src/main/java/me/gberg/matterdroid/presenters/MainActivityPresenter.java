@@ -43,6 +43,7 @@ import me.gberg.matterdroid.model.Users;
 import me.gberg.matterdroid.utils.picasso.ProfileImagePicasso;
 import me.gberg.matterdroid.utils.rx.Bus;
 import okhttp3.OkHttpClient;
+import rx.Subscription;
 import rx.android.schedulers.AndroidSchedulers;
 import rx.functions.Action1;
 import timber.log.Timber;
@@ -75,6 +76,7 @@ public class MainActivityPresenter extends AbstractActivityPresenter<MainActivit
 
     private ProfileImagePicasso profileImagePicasso;
 
+    private final Subscription busSubscription;
 
     @Inject
     public MainActivityPresenter(final Bus bus, final ChannelsManager channelsManager,
@@ -90,10 +92,10 @@ public class MainActivityPresenter extends AbstractActivityPresenter<MainActivit
         this.webSocketManager = webSocketManager;
         this.httpClient = httpClient;
 
-        Timber.w("Constructing MainActivityPresenter.");
+        Timber.v("Constructing MainActivityPresenter.");
 
         // Subscribe to the event bus.
-        this.bus.toObserverable()
+        busSubscription = this.bus.toObserverable()
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(new Action1<Object>() {
                     @Override
@@ -182,6 +184,14 @@ public class MainActivityPresenter extends AbstractActivityPresenter<MainActivit
         if (channel != null) {
             bundle.putString(STATE_CURRENT_CHANNEL, channel.id());
         }
+    }
+
+    @Override
+    public void leaveScope() {
+        // This method exists because I am struggling to see how to get the presenter to drop its
+        // references to other things that are keeping it hanging around after it goes out of scope
+        // and thus stopping it being garbage collected.
+        this.busSubscription.unsubscribe();
     }
 
     private void handleChannelsEvent(final ChannelsEvent event) {

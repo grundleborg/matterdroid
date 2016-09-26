@@ -129,11 +129,13 @@ public class MainActivity extends PresentedActivity {
                         .start(this);
                 return true;
             case R.id.me_main_change_team:
+                presenter.leaveScope();
                 sessionManager.changeTeam();
                 ChooseTeamActivity.launch(this);
                 finish();
                 return true;
             case R.id.me_main_log_out:
+                presenter.leaveScope();
                 sessionManager.logOut();
                 LoginActivity.launch(this);
                 finish();
