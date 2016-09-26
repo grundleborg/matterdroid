@@ -114,6 +114,10 @@ public class MainActivityPresenter extends AbstractActivityPresenter<MainActivit
                         }
                     }
                 });
+
+        // Adapters that belong to the Presenter.
+        postsAdapter = new FastItemAdapter<>();
+        footerAdapter = new FooterAdapter<>();
     }
 
     @Override
@@ -122,10 +126,6 @@ public class MainActivityPresenter extends AbstractActivityPresenter<MainActivit
 
         // Drawer
         drawerAdapter = getView().drawer.getItemAdapter();
-
-        // Posts
-        postsAdapter = new FastItemAdapter<>();
-        footerAdapter = new FooterAdapter<>();
 
         getView().setupPostsView(footerAdapter.wrap(postsAdapter));
 
@@ -140,7 +140,9 @@ public class MainActivityPresenter extends AbstractActivityPresenter<MainActivit
             final String channelId = savedInstanceState.getString(STATE_CURRENT_CHANNEL);
             if (channelId != null) {
                 // Note: This will only restore the selected channel if the app hasn't been killed.
-                channel = channelsManager.getChannelForId(channelId);
+                if (channels != null) {
+                    channel = channels.getChannelForId(channelId);
+                }
             }
         }
 
