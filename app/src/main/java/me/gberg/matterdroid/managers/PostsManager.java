@@ -1,13 +1,7 @@
 package me.gberg.matterdroid.managers;
 
 import org.joda.time.DateTime;
-import org.tautua.markdownpapers.Markdown;
-import org.tautua.markdownpapers.parser.ParseException;
 
-import java.io.Reader;
-import java.io.StringReader;
-import java.io.StringWriter;
-import java.io.Writer;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -108,8 +102,7 @@ public class PostsManager {
                         posts = new ArrayList<Post>();
                         postsMap = new HashMap<String, Post>();
                         for (String id: response.body().order()) {
-                            Post post = response.body().posts().get(id);
-                            post = parseMarkdown(post);
+                            final Post post = response.body().posts().get(id);
                             posts.add(post);
                             postsMap.put(post.id(), post);
                         }
@@ -148,9 +141,7 @@ public class PostsManager {
                         // Request is successful.
                         List<Post> newPosts = new ArrayList<Post>();
                         for (String id: response.body().order()) {
-                            Post post = response.body().posts().get(id);
-                            post = parseMarkdown(post);
-                            newPosts.add(post);
+                            newPosts.add(response.body().posts().get(id));
                         }
                         bus.send(new AddPostsEvent(new ArrayList<Post>(newPosts), posts.size(), true));
                         posts.addAll(newPosts);
@@ -185,10 +176,7 @@ public class PostsManager {
             return;
         }
 
-        Post post = message.parsedData().post();
-        post = parseMarkdown(post);
-
-        applyNewPost(post);
+        applyNewPost(message.parsedData().post());
     }
 
     public void applyNewPost(final Post post) {
@@ -229,19 +217,18 @@ public class PostsManager {
     }
 
     public void createNewPost(final String message) {
-        final Post prePost = Post.builder()
-                .setMessage(message)
-                .setChannelId(channel.id())
-                .setPendingPostId(sessionManager.getUser().id() + ":" + DateTime.now().getMillis())
-                .setUserId(sessionManager.getUser().id())
-                .setCreateAt(DateTime.now().getMillis())
-                .setPending(true)
-                .build();
-        final Post post = parseMarkdown(prePost);
-
         Single.create(new Single.OnSubscribe<Post>() {
             @Override
             public void call(final SingleSubscriber<? super Post> singleSubscriber) {
+                final Post post = Post.builder()
+                        .setMessage(message)
+                        .setChannelId(channel.id())
+                        .setPendingPostId(sessionManager.getUser().id() + ":" + DateTime.now().getMillis())
+                        .setUserId(sessionManager.getUser().id())
+                        .setCreateAt(DateTime.now().getMillis())
+                        .setPending(true)
+                        .build();
+
                 posts.add(0, post);
                 postsMap.put(post.pendingPostId(), post);
 
@@ -249,62 +236,39 @@ public class PostsManager {
                 posts.add(post);
                 bus.send(new AddPostsEvent(new ArrayList<Post>(posts), 0, true));
 
+                Observable<Response<Post>> createPostObservable = teamApi.createPost(team.id(), channel.id(), post);
+                createPostObservable.subscribeOn(Schedulers.newThread())
+                        .observeOn(Schedulers.computation())
+                        .subscribe(new Subscriber<Response<Post>>() {
+                            @Override
+                            public void onCompleted() {
+                                Timber.v("completed()");
+                            }
+
+                            @Override
+                            public void onError(final Throwable e) {
+                                // TODO: Handle error here.
+                            }
+
+                            @Override
+                            public void onNext(final Response<Post> response) {
+                                // Handle HTTP Response errors.
+                                if (!response.isSuccessful()) {
+                                    APIError apiError = errorParser.parseError(response);
+                                    // TODO: Handle API Error here.
+                                }
+
+                                if (!post.channelId().equals(channel.id())) {
+                                    // Message does not belong to the current channel.
+                                    return;
+                                }
+
+                                applyNewPost(response.body());
+                            }
+                        });
+
                 singleSubscriber.onSuccess(post);
             }
         }).subscribeOn(Schedulers.computation()).subscribe();
-
-        Observable<Response<Post>> createPostObservable = teamApi.createPost(team.id(), channel.id(), post);
-        createPostObservable.subscribeOn(Schedulers.newThread())
-                .observeOn(Schedulers.computation())
-                .subscribe(new Subscriber<Response<Post>>() {
-                    @Override
-                    public void onCompleted() {
-                        Timber.v("completed()");
-                    }
-
-                    @Override
-                    public void onError(final Throwable e) {
-                        // TODO: Handle error here.
-                    }
-
-                    @Override
-                    public void onNext(final Response<Post> response) {
-                        // Handle HTTP Response errors.
-                        if (!response.isSuccessful()) {
-                            APIError apiError = errorParser.parseError(response);
-                            // TODO: Handle API Error here.
-                        }
-
-                        if (!post.channelId().equals(channel.id())) {
-                            // Message does not belong to the current channel.
-                            return;
-                        }
-
-                        Post post = response.body();
-                        post = parseMarkdown(post);
-                        applyNewPost(post);
-                    }
-                });
-    }
-
-    // FIXME: Replace this with the decoding being part of the GSON decode process, or the Post object
-    // initialisation process.
-    private Post parseMarkdown(final Post post) {
-        Reader in = new StringReader(post.message());
-        Writer out = new StringWriter();
-
-        Markdown md = new Markdown();
-        try {
-            md.transform(in, out);
-            return Post.builder()
-                    .from(post)
-                    .setMarkdown(out.toString())
-                    .build();
-        } catch(ParseException e) {
-            return Post.builder()
-                    .from(post)
-                    .setMarkdown(post.message())
-                    .build();
-        }
     }
 }

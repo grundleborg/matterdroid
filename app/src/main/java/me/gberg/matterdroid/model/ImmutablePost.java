@@ -6,7 +6,13 @@ import com.google.gson.annotations.SerializedName;
 
 import org.immutables.gson.Gson;
 import org.immutables.value.Value;
+import org.tautua.markdownpapers.Markdown;
+import org.tautua.markdownpapers.parser.ParseException;
 
+import java.io.Reader;
+import java.io.StringReader;
+import java.io.StringWriter;
+import java.io.Writer;
 import java.util.List;
 
 @Value.Immutable
@@ -64,9 +70,20 @@ public abstract class ImmutablePost {
     @SerializedName("pending_post_id")
     public abstract String pendingPostId();
 
-    @Nullable
     @Gson.Ignore
-    public abstract String markdown();
+    @Value.Derived
+    public String markdown() {
+        Reader in = new StringReader(message());
+        Writer out = new StringWriter();
+
+        Markdown md = new Markdown();
+        try {
+            md.transform(in, out);
+            return out.toString();
+        } catch(ParseException e) {
+            return message();
+        }
+    }
 
     @Gson.Ignore
     @Value.Default
