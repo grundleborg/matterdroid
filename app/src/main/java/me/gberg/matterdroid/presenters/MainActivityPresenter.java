@@ -133,7 +133,6 @@ public class MainActivityPresenter extends AbstractActivityPresenter<MainActivit
 
         getView().setupPostsView(footerAdapter.wrap(postsAdapter));
 
-        webSocketManager.connect();
         channelsManager.loadChannels();
         usersManager.loadUsers();
 
@@ -259,11 +258,11 @@ public class MainActivityPresenter extends AbstractActivityPresenter<MainActivit
         List<Channel> dmChannels = new ArrayList<>();
 
         for (final Channel channel : channels.channels()) {
-            if (channel.type().equals("O")) {
+            if (channel.hasType(Channel.TYPE_OPEN)) {
                 publicChannels.add(channel);
-            } else if (channel.type().equals("P")) {
+            } else if (channel.hasType(Channel.TYPE_PRIVATE)) {
                 privateChannels.add(channel);
-            } else if (channel.type().equals("D")) {
+            } else if (channel.hasType(Channel.TYPE_DIRECT)) {
                 dmChannels.add(channel);
             } else {
                 publicChannels.add(channel);
@@ -294,6 +293,7 @@ public class MainActivityPresenter extends AbstractActivityPresenter<MainActivit
             );
         }
     }
+
     private void handleAddPostsEvent(final AddPostsEvent event) {
         Timber.v("handleAddPostsEvent()");
 
@@ -331,7 +331,7 @@ public class MainActivityPresenter extends AbstractActivityPresenter<MainActivit
         ListIterator<Post> newPostsIterator = newPosts.listIterator(newPosts.size());
         while (newPostsIterator.hasPrevious()) {
             final Post post = newPostsIterator.previous();
-            if (shouldStartNewPostBlock(previousPost, post)) {
+            if (post.shouldStartNewPostBlock(previousPost)) {
                 newPostItems.add(0, new PostBasicTopItem(post, profileImagePicasso, users.users().get(post.userId())));
             } else {
                 newPostItems.add(0, new PostBasicSubItem(post));
@@ -357,25 +357,6 @@ public class MainActivityPresenter extends AbstractActivityPresenter<MainActivit
 
         // Now the editing of the adapter contents is complete, do the autoscroll if appropriate.
         getView().autoScrollPostsView();
-    }
-
-    private boolean shouldStartNewPostBlock(final Post previousPost, final Post thisPost) {
-        // No previous post.
-        if (previousPost == null) {
-            return true;
-        }
-
-        // Different user on the previous post.
-        if (!previousPost.userId().equals(thisPost.userId())) {
-            return true;
-        }
-
-        // Too much time past since last post.
-        if (previousPost.createAt() + 900000 < thisPost.createAt()) {
-            return true;
-        }
-
-        return false;
     }
 
     private void handleRemovePostEvent(final RemovePostEvent event) {

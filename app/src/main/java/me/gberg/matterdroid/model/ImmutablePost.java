@@ -90,4 +90,23 @@ public abstract class ImmutablePost {
     public boolean pending() {
         return false;
     };
+
+    public boolean shouldStartNewPostBlock(final Post previousPost) {
+        // No previous post.
+        if (previousPost == null) {
+            return true;
+        }
+
+        // Different user on the previous post.
+        if (!previousPost.userId().equals(this.userId())) {
+            return true;
+        }
+
+        // Too much time past since last post.
+        if (previousPost.createAt() + 900000 < this.createAt()) {
+            return true;
+        }
+
+        return false;
+    }
 }

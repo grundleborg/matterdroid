@@ -16,4 +16,12 @@ public abstract class ImmutableChannel {
 
     @SerializedName("display_name")
     public abstract String displayName();
+
+    public boolean hasType(final String typeString) {
+        return type().equals(typeString);
+    }
+
+    public final static String TYPE_OPEN = "O";
+    public final static String TYPE_PRIVATE = "P";
+    public final static String TYPE_DIRECT = "D";
 }
