@@ -15,6 +15,8 @@ import java.io.StringWriter;
 import java.io.Writer;
 import java.util.List;
 
+import timber.log.Timber;
+
 @Value.Immutable
 public abstract class ImmutablePost {
 
@@ -97,6 +99,16 @@ public abstract class ImmutablePost {
             return true;
         }
 
+        // Previous post is not an "ordinary" message.
+        if (!previousPost.hasType(TYPE_ORDINARY)) {
+            return true;
+        }
+
+        // This post is not an "ordinary" message.
+        if (!hasType(TYPE_ORDINARY)) {
+            return true;
+        }
+
         // Different user on the previous post.
         if (!previousPost.userId().equals(this.userId())) {
             return true;
@@ -109,4 +121,16 @@ public abstract class ImmutablePost {
 
         return false;
     }
+
+    public boolean hasType(final String type) {
+        if (this.type() == null) {
+            return type.equals(TYPE_ORDINARY);
+        }
+
+        return this.type().equals(type);
+    }
+
+    public final static String TYPE_ORDINARY = "";
+    public final static String TYPE_JOIN_LEAVE = "system_join_leave";
+    public final static String TYPE_HEADER_CHANGE = "system_header_change";
 }

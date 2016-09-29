@@ -2,6 +2,9 @@
     <!-- App -->
     <string name="app_name">MatterDroid</string>
 
+    <!-- General -->
+    <string name="general_system_user_name">System</string>
+
     <!-- Activity: Login -->
     <string name="title_activity_login">Sign In</string>
 

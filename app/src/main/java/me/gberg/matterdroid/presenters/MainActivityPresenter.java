@@ -24,6 +24,7 @@ import me.gberg.matterdroid.activities.MainActivity;
 import me.gberg.matterdroid.adapters.items.PostBasicSubItem;
 import me.gberg.matterdroid.adapters.items.PostBasicTopItem;
 import me.gberg.matterdroid.adapters.items.PostItem;
+import me.gberg.matterdroid.adapters.items.PostSystemTopItem;
 import me.gberg.matterdroid.di.scopes.TeamScope;
 import me.gberg.matterdroid.events.PostsEvent;
 import me.gberg.matterdroid.managers.ChannelsManager;
@@ -460,7 +461,11 @@ public class MainActivityPresenter extends AbstractActivityPresenter<MainActivit
         while (newPostsIterator.hasPrevious()) {
             final Post post = newPostsIterator.previous();
             if (post.shouldStartNewPostBlock(previousPost)) {
-                newPostItems.add(0, new PostBasicTopItem(post, profileImagePicasso, users.users().get(post.userId())));
+                if (post.hasType(Post.TYPE_JOIN_LEAVE) || post.hasType(Post.TYPE_HEADER_CHANGE)) {
+                    newPostItems.add(0, new PostSystemTopItem(post));
+                } else {
+                    newPostItems.add(0, new PostBasicTopItem(post, profileImagePicasso, users.users().get(post.userId())));
+                }
             } else {
                 newPostItems.add(0, new PostBasicSubItem(post));
             }

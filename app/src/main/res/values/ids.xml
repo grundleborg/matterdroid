@@ -4,4 +4,5 @@
     <item type="id" name="id_it_choose_team_team"/>
     <item type="id" name="id_it_post_basic_top"/>
     <item type="id" name="id_it_post_basic_sub"/>
+    <item type="id" name="id_it_post_system_top"/>
 </resources>
