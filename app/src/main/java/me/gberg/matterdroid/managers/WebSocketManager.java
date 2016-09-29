@@ -98,7 +98,14 @@ public class WebSocketManager implements WebSocketListener {
         Timber.v(payload);
 
         // Message received. Parse it and emit the appropriate event on the bus.
-        WebSocketMessage message = gson.fromJson(payload, WebSocketMessage.class);
+        WebSocketMessage message;
+        try {
+            message = gson.fromJson(payload, WebSocketMessage.class);
+        } catch (Exception e) {
+            Timber.e(e, "Couldn't parse JSON of web socket message. Something's up.");
+            return;
+        }
+
         if (message.event() != null) {
             switch (message.event()) {
                 case "posted":
