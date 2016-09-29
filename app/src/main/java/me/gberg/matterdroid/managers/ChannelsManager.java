@@ -6,8 +6,6 @@ import java.util.Comparator;
 import java.util.List;
 
 import me.gberg.matterdroid.api.TeamAPI;
-import me.gberg.matterdroid.events.ChannelsEvent;
-import me.gberg.matterdroid.events.TeamsListEvent;
 import me.gberg.matterdroid.model.APIError;
 import me.gberg.matterdroid.model.Channel;
 import me.gberg.matterdroid.model.Channels;
@@ -18,6 +16,7 @@ import retrofit2.Response;
 import rx.Observable;
 import rx.Subscriber;
 import rx.android.schedulers.AndroidSchedulers;
+import rx.functions.Action1;
 import rx.schedulers.Schedulers;
 import timber.log.Timber;
 
@@ -36,9 +35,20 @@ public class ChannelsManager {
         this.team = team;
         this.teamApi = teamApi;
         this.errorParser = errorParser;
+
+        // Observe the bus for connection resets.
+        bus.getConnectionStateSubject()
+                .subscribe(new Action1<WebSocketManager.ConnectionState>() {
+                    @Override
+                    public void call(final WebSocketManager.ConnectionState connectionState) {
+                        if (connectionState == WebSocketManager.ConnectionState.Connected) {
+                            loadChannels();
+                        }
+                    }
+                });
     }
 
-    public void loadChannels() {
+    private void loadChannels() {
         Observable<Response<Channels>> observable = teamApi.channels(team.id());
         observable.subscribeOn(Schedulers.newThread())
                 .observeOn(AndroidSchedulers.mainThread())
@@ -50,7 +60,7 @@ public class ChannelsManager {
 
                     @Override
                     public void onError(final Throwable e) {
-                        bus.send(new ChannelsEvent(e));
+                        Timber.e(e, "channels API call returned an error.");
                     }
 
                     @Override
@@ -59,7 +69,7 @@ public class ChannelsManager {
                         // Handle HTTP Response errors.
                         if (!response.isSuccessful()) {
                             APIError apiError = errorParser.parseError(response);
-                            bus.send(new TeamsListEvent(apiError));
+                            Timber.e("Channels Error: " + apiError.statusCode() + apiError.detailedError());
                         }
 
                         // Request is successful.
@@ -89,22 +99,9 @@ public class ChannelsManager {
                                 .from(channels)
                                 .setChannels(channelsMutable)
                                 .build();
-                        bus.send(new ChannelsEvent(newChannels));
+                        ChannelsManager.this.channels = newChannels;
+                        bus.getChannelsSubject().onNext(newChannels);
                     }
                 });
-    }
-
-    public Channel getChannelForId(final String id) {
-        if (channels == null) {
-            return null;
-        }
-
-        for (final Channel channel: channels.channels()) {
-            if (channel.id().equals(id)) {
-                return channel;
-            }
-        }
-
-        return null;
     }
 }

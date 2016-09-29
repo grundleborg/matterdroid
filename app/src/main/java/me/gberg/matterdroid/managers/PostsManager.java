@@ -8,7 +8,7 @@ import java.util.List;
 import java.util.Map;
 
 import me.gberg.matterdroid.api.TeamAPI;
-import me.gberg.matterdroid.events.AddPostsEvent;
+import me.gberg.matterdroid.events.PostsEvent;
 import me.gberg.matterdroid.events.RemovePostEvent;
 import me.gberg.matterdroid.model.APIError;
 import me.gberg.matterdroid.model.Channel;
@@ -106,7 +106,7 @@ public class PostsManager {
                             posts.add(post);
                             postsMap.put(post.id(), post);
                         }
-                        bus.send(new AddPostsEvent(new ArrayList<Post>(posts), 0));
+                        bus.getPostsSubject().onNext(new PostsEvent(new ArrayList<Post>(posts)));
                     }
                 });
     }
@@ -143,11 +143,11 @@ public class PostsManager {
                         for (String id: response.body().order()) {
                             newPosts.add(response.body().posts().get(id));
                         }
-                        bus.send(new AddPostsEvent(new ArrayList<Post>(newPosts), posts.size(), true));
                         posts.addAll(newPosts);
                         for (final Post post: posts) {
                             postsMap.put(post.id(), post);
                         }
+                        bus.getPostsSubject().onNext(new PostsEvent(new ArrayList<Post>(posts), true));
                     }
                 });
         return true;
@@ -158,7 +158,7 @@ public class PostsManager {
             @Override
             public void call(final SingleSubscriber<? super Void> singleSubscriber) {
                 if (posts != null) {
-                    bus.send(new AddPostsEvent(new ArrayList<Post>(posts), 0));
+                    bus.getPostsSubject().onNext(new PostsEvent(new ArrayList<Post>(posts)));
                 }
                 singleSubscriber.onSuccess(null);
             }
@@ -201,7 +201,7 @@ public class PostsManager {
 
             List<Post> newPosts = new ArrayList<>();
             newPosts.add(post);
-            bus.send(new AddPostsEvent(new ArrayList<Post>(newPosts), 0));
+            bus.getPostsSubject().onNext(new PostsEvent(new ArrayList<Post>(posts)));
         } else {
             // TODO: Post is updated (depending on timestamp), not new.
             Timber.w("Duplicate receipt of post not handled yet.");
@@ -229,12 +229,11 @@ public class PostsManager {
                         .setPending(true)
                         .build();
 
-                posts.add(0, post);
-                postsMap.put(post.pendingPostId(), post);
-
-                ArrayList<Post> posts = new ArrayList<Post>();
-                posts.add(post);
-                bus.send(new AddPostsEvent(new ArrayList<Post>(posts), 0, true));
+                if (post.channelId().equals(channel.id())) {
+                    posts.add(0, post);
+                    postsMap.put(post.pendingPostId(), post);
+                    bus.getPostsSubject().onNext(new PostsEvent(new ArrayList<Post>(posts)));
+                }
 
                 Observable<Response<Post>> createPostObservable = teamApi.createPost(team.id(), channel.id(), post);
                 createPostObservable.subscribeOn(Schedulers.newThread())

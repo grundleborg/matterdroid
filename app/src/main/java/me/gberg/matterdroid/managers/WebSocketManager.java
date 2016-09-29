@@ -32,8 +32,14 @@ public class WebSocketManager implements WebSocketListener {
     private SessionManager sessionManager;
     private ErrorParser errorParser;
 
+    public enum ConnectionState {
+        Disconnected,
+        Connecting,
+        Connected
+    }
+
     // FIXME: is this accessed from multiple threads?
-    boolean connected = false;
+    private ConnectionState connectionState = ConnectionState.Disconnected;
 
     WebSocket webSocket;
 
@@ -51,8 +57,8 @@ public class WebSocketManager implements WebSocketListener {
     }
 
     public void connect() {
-        Timber.d("connect()");
-        if (!connected) {
+        Timber.v("connect()");
+        if (connectionState == ConnectionState.Disconnected) {
             Timber.d("Attempting to connect to web socket.");
 
             Request request = new Request.Builder()
@@ -62,26 +68,26 @@ public class WebSocketManager implements WebSocketListener {
                     .build();
 
             WebSocketCall.create(httpClient, request).enqueue(this);
-            connected = true;
+            setConnectionState(connectionState = ConnectionState.Connecting);
         }
     }
 
     public void disconnect() {
-        Timber.d("disconnect()");
-        if (connected) {
+        Timber.v("disconnect()");
+        if (connectionState != ConnectionState.Disconnected) {
             try {
                 this.webSocket.close(1000, "Goodbye");
-                this.connected = false;
             } catch (IOException e) {
                 Timber.e(e, "Failed to close websocket.");
             }
+            setConnectionState(connectionState = ConnectionState.Disconnected);
         }
     }
 
     @Override
     public void onOpen(WebSocket webSocket, Response response) {
         Timber.v("onOpen().");
-        this.connected = true;
+        setConnectionState(ConnectionState.Connected);
         this.webSocket = webSocket;
     }
 
@@ -124,12 +130,19 @@ public class WebSocketManager implements WebSocketListener {
     @Override
     public void onClose(int code, String reason) {
         Timber.v("onClose()");
+        setConnectionState(ConnectionState.Disconnected);
     }
 
     @Override
     public void onFailure(IOException e, Response response) {
         Timber.v("onFailure()");
         Timber.w(e);
+        setConnectionState(ConnectionState.Disconnected);
+    }
+
+    private void setConnectionState(final ConnectionState connectionState) {
+        this.connectionState = connectionState;
+        bus.getConnectionStateSubject().onNext(connectionState);
     }
 
 }

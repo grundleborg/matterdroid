@@ -3,7 +3,6 @@ package me.gberg.matterdroid.managers;
 import java.util.HashMap;
 
 import me.gberg.matterdroid.api.TeamAPI;
-import me.gberg.matterdroid.events.MembersEvent;
 import me.gberg.matterdroid.model.APIError;
 import me.gberg.matterdroid.model.Channel;
 import me.gberg.matterdroid.model.ExtraInfo;
@@ -27,7 +26,6 @@ public class MembersManager {
 
     private Channel channel;
     private HashMap<String, Member> members;
-    private int membersCount;
 
     public MembersManager(final ErrorParser errorParser,
                           final Bus bus,
@@ -43,7 +41,6 @@ public class MembersManager {
         this.channel = channel;
         if (this.members != null) {
             this.members = null;
-            this.membersCount = 0;
         }
 
         // Load the extra info for this channel.
@@ -58,7 +55,7 @@ public class MembersManager {
 
                     @Override
                     public void onError(final Throwable e) {
-                        bus.send(new MembersEvent(e));
+                        Timber.e(e, "etra info API returned an error.");
                     }
 
                     @Override
@@ -67,33 +64,23 @@ public class MembersManager {
                         // Handle HTTP Response errors.
                         if (!response.isSuccessful()) {
                             APIError apiError = errorParser.parseError(response);
-                            bus.send(new MembersEvent(apiError));
+                            Timber.e("Extra Info Error: " + apiError.statusCode() + apiError.detailedError());
                         }
 
                         // If the channel ID doesn't match, throw away the stale response.
                         final ExtraInfo body = response.body();
-                        if (!body.id().equals(channel.id())) {
+                        if (!body.id().equals(MembersManager.this.channel.id())) {
                             return;
                         }
 
                         // Save to the manager.
-                        membersCount = body.memberCount();
                         members = new HashMap<String, Member>();
                         for (final Member member: body.members()) {
                             members.put(member.id(), member);
                         }
 
-                        // Request is successful.
-                        bus.send(new MembersEvent(body.id(), body.memberCount(), body.members()));
+                        // TODO: Emit a message once someone cares.
                     }
                 });
-    }
-
-    public final Member getMember(final String id) {
-        return members.get(id);
-    }
-
-    public final boolean isPopulated() {
-        return members != null;
     }
 }

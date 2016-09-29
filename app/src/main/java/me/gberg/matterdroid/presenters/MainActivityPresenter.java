@@ -25,18 +25,13 @@ import me.gberg.matterdroid.adapters.items.PostBasicSubItem;
 import me.gberg.matterdroid.adapters.items.PostBasicTopItem;
 import me.gberg.matterdroid.adapters.items.PostItem;
 import me.gberg.matterdroid.di.scopes.TeamScope;
-import me.gberg.matterdroid.events.AddPostsEvent;
-import me.gberg.matterdroid.events.ChannelsEvent;
-import me.gberg.matterdroid.events.MembersEvent;
-import me.gberg.matterdroid.events.RemovePostEvent;
-import me.gberg.matterdroid.events.UsersEvent;
+import me.gberg.matterdroid.events.PostsEvent;
 import me.gberg.matterdroid.managers.ChannelsManager;
 import me.gberg.matterdroid.managers.MembersManager;
 import me.gberg.matterdroid.managers.PostsManager;
 import me.gberg.matterdroid.managers.SessionManager;
 import me.gberg.matterdroid.managers.UsersManager;
 import me.gberg.matterdroid.managers.WebSocketManager;
-import me.gberg.matterdroid.model.APIError;
 import me.gberg.matterdroid.model.Channel;
 import me.gberg.matterdroid.model.Channels;
 import me.gberg.matterdroid.model.Post;
@@ -54,32 +49,35 @@ import timber.log.Timber;
 @TeamScope
 public class MainActivityPresenter extends AbstractActivityPresenter<MainActivity> {
 
-    // Injected Misc.
+    // Injected dependencies.
     private final Bus bus;
     private final OkHttpClient httpClient;
-
-    // Injected State Managers.
     private final ChannelsManager channelsManager;
-    private final MembersManager membersManager;
     private final PostsManager postsManager;
     private final SessionManager sessionManager;
     private final UsersManager usersManager;
     private final WebSocketManager webSocketManager;
 
-    // Misc Local State.
-    private IItemAdapter<IDrawerItem> drawerAdapter;
+    // ViewModel.
     private Channels channels;
-    private boolean horribleHackShouldTriggerEmitPosts = false;
     private Users users;
-
-    private Channel channel;
     private FastItemAdapter<IItem> postsAdapter;
+    private WebSocketManager.ConnectionState connectionState = WebSocketManager.ConnectionState.Disconnected;
+    private List<Post> posts;
+    private List<Post> newPosts;
+
+    // Presenter State.
+    private IItemAdapter<IDrawerItem> drawerAdapter;
+    private Channel channel;
     private FooterAdapter<ProgressItem> footerAdapter;
     private boolean noMoreScrollBack = false;
+    private String activityTitle;
+    private boolean isScrollback = false;
 
+    // Utils
     private ProfileImagePicasso profileImagePicasso;
 
-    private final Subscription busSubscription;
+    // Subscriptions
     private Subscription webSocketTimeoutSubscription;
 
     @Inject
@@ -87,9 +85,9 @@ public class MainActivityPresenter extends AbstractActivityPresenter<MainActivit
                                  final MembersManager membersManager, final PostsManager postsManager,
                                  final SessionManager sessionManager, final UsersManager usersManager,
                                  final WebSocketManager webSocketManager, final OkHttpClient httpClient) {
+        // Injected dependencies.
         this.bus = bus;
         this.channelsManager = channelsManager;
-        this.membersManager = membersManager;
         this.postsManager = postsManager;
         this.sessionManager = sessionManager;
         this.usersManager = usersManager;
@@ -98,26 +96,53 @@ public class MainActivityPresenter extends AbstractActivityPresenter<MainActivit
 
         Timber.v("Constructing MainActivityPresenter.");
 
-        // Subscribe to the event bus.
-        busSubscription = this.bus.toObserverable()
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(new Action1<Object>() {
-                    @Override
-                    public void call(Object event) {
-                        if (event instanceof ChannelsEvent) {
-                            handleChannelsEvent((ChannelsEvent) event);
-                            updateDrawer();
-                        } else if (event instanceof AddPostsEvent) {
-                            handleAddPostsEvent((AddPostsEvent) event);
-                        } else if (event instanceof RemovePostEvent) {
-                            handleRemovePostEvent((RemovePostEvent) event);
-                        } else if (event instanceof MembersEvent) {
-                            handleMembersEvent((MembersEvent) event);
-                        } else if (event instanceof UsersEvent) {
-                            handleUsersEvent((UsersEvent) event);
-                        }
-                    }
-                });
+        // Subscribe to connection state changes.
+        addSubscription(
+                bus.getConnectionStateSubject()
+                        .observeOn(AndroidSchedulers.mainThread())
+                        .subscribe(new Action1<WebSocketManager.ConnectionState>() {
+                            @Override
+                            public void call(final WebSocketManager.ConnectionState connectionState) {
+                                handleConnectionStateChanged(connectionState);
+                            }
+                        })
+        );
+
+        // Subscribe to the channel list.
+        addSubscription(
+                bus.getChannelsSubject()
+                        .observeOn(AndroidSchedulers.mainThread())
+                        .subscribe(new Action1<Channels>() {
+                            @Override
+                            public void call(final Channels channels) {
+                                handleChannelsChanged(channels);
+                            }
+                        })
+        );
+
+        // Subscribe to the posts list.
+        addSubscription(
+                bus.getPostsSubject()
+                        .observeOn(AndroidSchedulers.mainThread())
+                        .subscribe(new Action1<PostsEvent>() {
+                            @Override
+                            public void call(final PostsEvent postsEvent) {
+                                handlePostsChanged(postsEvent);
+                            }
+                        })
+        );
+
+        // Subscribe to the channels list.
+        addSubscription(
+                bus.getUsersSubject()
+                        .observeOn(AndroidSchedulers.mainThread())
+                        .subscribe(new Action1<Users>() {
+                            @Override
+                            public void call(final Users users) {
+                                handleUsersChanged(users);
+                            }
+                        })
+        );
 
         // Adapters that belong to the Presenter.
         postsAdapter = new FastItemAdapter<>();
@@ -128,13 +153,11 @@ public class MainActivityPresenter extends AbstractActivityPresenter<MainActivit
     protected void onCreated(final Bundle savedInstanceState) {
         Timber.v("onTakeView()");
 
-        // Drawer
+        // Get the drawer adapter from the view.
         drawerAdapter = getView().drawer.getItemAdapter();
 
+        // Initialise the Posts view.
         getView().setupPostsView(footerAdapter.wrap(postsAdapter));
-
-        channelsManager.loadChannels();
-        usersManager.loadUsers();
 
         // Load saved instance state.
         if (savedInstanceState != null) {
@@ -149,15 +172,21 @@ public class MainActivityPresenter extends AbstractActivityPresenter<MainActivit
             }
         }
 
+        // If the channel is saved, but there are no posts shown, ask the posts adapter to emit it's
+        // current state of posts (typically triggered on restoring a saved activity state, but when
+        // the app itself hasn't been killed). Otherwise, open the drawer to offer a selection of channels.
         if (channel != null) {
-            if (postsAdapter.getAdapterItemCount() == 0) {
-                postsManager.emitMessages();
-            }
+            updatePosts();
         } else {
             getView().openDrawer();
         }
 
+        updateDrawer();
+
+        // Instantiate the Profile Image Picasso (depends on context).
         profileImagePicasso = new ProfileImagePicasso(sessionManager.getServer(), getView(), httpClient);
+
+        setActivityTitle(activityTitle);
     }
 
     @Override
@@ -174,7 +203,9 @@ public class MainActivityPresenter extends AbstractActivityPresenter<MainActivit
             webSocketTimeoutSubscription = null;
         }
 
-        webSocketManager.connect();
+        if (connectionState == connectionState.Disconnected) {
+            webSocketManager.connect();
+        }
     }
 
     @Override
@@ -218,37 +249,49 @@ public class MainActivityPresenter extends AbstractActivityPresenter<MainActivit
         }
     }
 
-    @Override
-    public void leaveScope() {
-        // This method exists because I am struggling to see how to get the presenter to drop its
-        // references to other things that are keeping it hanging around after it goes out of scope
-        // and thus stopping it being garbage collected.
-        this.busSubscription.unsubscribe();
+    private void handleConnectionStateChanged(final WebSocketManager.ConnectionState connectionState) {
+        Timber.v("handleConnectionStateChanged(): " + connectionState);
+
+        this.connectionState = connectionState;
     }
 
-    private void handleChannelsEvent(final ChannelsEvent event) {
-        Timber.v("handleChannelsEvent()");
-        if (event.isApiError()) {
-            APIError apiError = event.getApiError();
-            Timber.e("Unrecognised HTTP response code: " + apiError.statusCode() + " with error id " + apiError.id());
-            return;
-        } else if (event.isError()) {
-            // Unhandled error. Log it.
-            Throwable e = event.getThrowable();
-            Timber.e(e, e.getMessage());
-            return;
+    private void handleChannelsChanged(final Channels channels) {
+        Timber.v("handleChannelsChanged()");
+
+        this.channels = channels;
+
+        // React to the channels list changing.
+        updateDrawer();
+    }
+
+    private void handlePostsChanged(final PostsEvent postsEvent) {
+        Timber.v("handlePostsChanged()");
+
+        this.newPosts = postsEvent.getPosts();
+
+        if (postsEvent.isScrollback()) {
+            isScrollback = true;
         }
 
-        // Success.
-        this.channels = event.getChannels();
+        // React to the posts list changing.
+        updatePosts();
+    }
+
+    private void handleUsersChanged(final Users users) {
+        Timber.v("handleUsersChanged()");
+
+        this.users = users;
+
+        updatePosts();
     }
 
     private void updateDrawer() {
         Timber.v("updateDrawer()");
 
         // Check all the state we need for this has been received.
-        if (this.channels == null) {
+        if (this.channels == null || this.users == null) {
             Timber.v("Incomplete state so not updating drawer.");
+            return;
         }
 
         drawerAdapter.clear();
@@ -294,22 +337,108 @@ public class MainActivityPresenter extends AbstractActivityPresenter<MainActivit
         }
     }
 
-    private void handleAddPostsEvent(final AddPostsEvent event) {
-        Timber.v("handleAddPostsEvent()");
+    private void updatePosts() {
+        Timber.v("updatePosts()");
 
+        // Check state conditions before carrying out the update.
         if (users == null) {
-            Timber.v("not bothering as members manager is not yet populated.");
-            horribleHackShouldTriggerEmitPosts = true;
+            Timber.v("Not updating posts as we haven't got all the needed state yet.");
             return;
         }
+
+        // If posts is null, we can short-circuit the delta-application process.
+        if (posts == null || posts.isEmpty()) {
+            Timber.v("posts == null or isEmpty() -> skip diffing and just apply posts list direct.");
+            posts = newPosts;
+            addPostsToAdapter(newPosts, 0);
+            return;
+        }
+
+        // Clear the footer adapter if scrollback is done. Do this before merging to avoid wrapped
+        // items screwing things up.
+        if (isScrollback) {
+            footerAdapter.clear();
+            isScrollback = false;
+        }
+
+        Timber.d("About to start removing posts. Posts Size: " + posts.size()
+                + " New Posts Size: " + newPosts.size()
+                + " Adapter Size: " + postsAdapter.getAdapterItemCount());
+
+        // Remove any old posts that are not *in newPosts in the same order*.
+        int lastPostIndex = 0;
+        int i = 0;
+        while (i < posts.size()) {
+            int postIndex = postsIndexOf(lastPostIndex, newPosts, posts.get(i));
+            if (postIndex == -1) {
+                // Didn't find the post ahead of here in the newPosts. Remove it.
+                removePostFromAdapter(posts.get(i), i);
+                posts.remove(i);
+            } else {
+                // Did find it. Nothing to remove, but increment the iterator variables.
+                i++;
+                lastPostIndex = postIndex;
+            }
+        }
+
+        Timber.d("About to start adding new posts. Posts Size: " + posts.size()
+                + " New Posts Size: " + newPosts.size()
+                + " Adapter Size: " + postsAdapter.getAdapterItemCount());
+
+        // Now add the new posts.
+        int sliceStart = 0;
+        for (int j = 0; j < posts.size(); j++) {
+            for (int k = sliceStart; k < newPosts.size(); k++) {
+                if (posts.get(j) == newPosts.get(k)) {
+                    if (j == posts.size() -1 && posts.size() < newPosts.size()) {
+                        // Reached the end of the existing posts. Add everything new past here.
+                        Timber.d("Adding all remaining posts at the end of newPosts.");
+                        List<Post> slice = newPosts.subList(sliceStart + 1, newPosts.size());
+                        addPostsToAdapter(slice, sliceStart + 1);
+                        posts.addAll(sliceStart + 1, slice);
+                        j = posts.size(); // Bring the outer loop to an end.
+                    } else if (k == sliceStart) {
+                        // Nothing new found. Increase the slicer.
+                        sliceStart = j + 1;
+                    } else {
+                        // We found some stuff to slice. Create the slice and add the posts.
+                        Timber.d("Creating slice to add. Slice Start:" + sliceStart + " J:" + j + " K:" + k);
+                        List<Post> slice = newPosts.subList(sliceStart, k);
+                        addPostsToAdapter(slice, sliceStart);
+                        posts.addAll(sliceStart, slice);
+                        // Then increment the slicer *and j*.
+                        sliceStart = j + slice.size() + 1;
+                        j = j + slice.size();
+                    }
+                    break;
+                }
+            }
+        }
+
+        Timber.d("Done updating Posts. Posts Size: " + posts.size()
+                + " New Posts Size: " + newPosts.size()
+                + " Adapter Size: " + postsAdapter.getAdapterItemCount());
+    }
+
+    private int postsIndexOf(int startIndex, List<Post> posts, Post post) {
+        for (int i = startIndex; i < posts.size(); i++) {
+            if (posts.get(i) == post) {
+                return i;
+            }
+        }
+        return -1;
+    }
+
+    private void addPostsToAdapter(final List<Post> posts, int position) {
+        Timber.v("addPostsToAdapter(): Posts: " + posts.size() + " Position: " + position);
 
         Post previousPost = null;
 
         // If we are inserting at the end of the adapter, there is no previous post. However, if not
         // then we should set the previous post to the one "before" where we are inserting.
-        if (event.getPosition() < postsAdapter.getItemAdapter().getItemCount()) {
+        if (position < postsAdapter.getItemAdapter().getItemCount()) {
             try {
-                PostItem postItem = (PostItem) postsAdapter.getItem(event.getPosition());
+                PostItem postItem = (PostItem) postsAdapter.getItem(position);
                 // Check it is not null in case there is some other item here due to wrapped adapters.
                 if (postItem != null) {
                     previousPost = postItem.getPost();
@@ -326,9 +455,8 @@ public class MainActivityPresenter extends AbstractActivityPresenter<MainActivit
         // ordered programatically in descending time, which is the opposite of how the user
         // actually perceives things when interacting with the posts list.
         List<IItem> newPostItems = new ArrayList<>();
-        List<Post> newPosts = event.getPosts();
 
-        ListIterator<Post> newPostsIterator = newPosts.listIterator(newPosts.size());
+        ListIterator<Post> newPostsIterator = posts.listIterator(posts.size());
         while (newPostsIterator.hasPrevious()) {
             final Post post = newPostsIterator.previous();
             if (post.shouldStartNewPostBlock(previousPost)) {
@@ -341,15 +469,12 @@ public class MainActivityPresenter extends AbstractActivityPresenter<MainActivit
 
         // Check our scroll position before the update to decide whether to scroll automatically to
         // the top (visually, bottom) of the view once the new items have been added.
-        if (event.getPosition() == 0) {
+        if (position == 0) {
             getView().checkShouldAutoScrollPostsView();
         }
 
         // Add the new items to the adapter.
-        postsAdapter.add(event.getPosition(), newPostItems);
-        if (event.isScrollback()) {
-            footerAdapter.clear();
-        }
+        postsAdapter.add(position, newPostItems);
 
         // If there is an item directly *before* (ie. below) where we insert these items, then we
         // should check whether to convert it's PostItem type too.
@@ -359,41 +484,12 @@ public class MainActivityPresenter extends AbstractActivityPresenter<MainActivit
         getView().autoScrollPostsView();
     }
 
-    private void handleRemovePostEvent(final RemovePostEvent event) {
-        postsAdapter.remove(event.getPosition());
+    private void removePostFromAdapter(final Post post, int position) {
+        Timber.v("RemovePostFromAdapter() " + position + " size: " + postsAdapter.getAdapterItemCount());
+
+        postsAdapter.remove(position);
+
         // TODO: Make sure this doesn't break the top/sub division of posts.
-    }
-
-    private void handleMembersEvent(final MembersEvent event) {
-        Timber.v("handleMembersEvent()");
-        if (event.isApiError()) {
-            APIError apiError = event.getApiError();
-            Timber.e("Unrecognised HTTP response code: " + apiError.statusCode() + " with error id " + apiError.id());
-            return;
-        } else if (event.isError()) {
-            // Unhandled error. Log it.
-            Throwable e = event.getThrowable();
-            Timber.e(e, e.getMessage());
-            return;
-        }
-
-        // Success
-        Timber.i("Members for channel retrieved: "+event.getMembersCount());
-
-        if (postsAdapter.getAdapterItemCount() == 0 && horribleHackShouldTriggerEmitPosts) {
-            postsManager.emitMessages();
-            horribleHackShouldTriggerEmitPosts = false;
-        }
-    }
-
-    private void handleUsersEvent(UsersEvent usersEvent) {
-        Timber.v("handleUsersEvent()");
-        users = usersEvent.getUsers();
-
-        if (horribleHackShouldTriggerEmitPosts) {
-            postsManager.emitMessages();
-            horribleHackShouldTriggerEmitPosts = false;
-        }
     }
 
     public void sendMessage(final CharSequence text) {
@@ -406,10 +502,14 @@ public class MainActivityPresenter extends AbstractActivityPresenter<MainActivit
 
     public boolean drawerItemClicked(final Drawer drawer, long id, final IDrawerItem drawerItem) {
         if (drawerItem instanceof ChannelDrawerItem) {
+
+            // Reset the ViewModel state.
             channel = ((ChannelDrawerItem) drawerItem).getChannel();
+            posts.clear();
+            newPosts.clear();
 
             // Set activity title.
-            getView().setTitle(channel.displayName());
+            setActivityTitle(channel.displayName());
 
             // Clear the message adapter.
             footerAdapter.clear();
@@ -419,7 +519,6 @@ public class MainActivityPresenter extends AbstractActivityPresenter<MainActivit
 
             noMoreScrollBack = false;
 
-            membersManager.setChannel(channel);
             postsManager.setChannel(channel);
             drawer.closeDrawer();
         }
@@ -437,6 +536,13 @@ public class MainActivityPresenter extends AbstractActivityPresenter<MainActivit
 
     public FooterAdapter getFooterAdapter() {
         return footerAdapter;
+    }
+
+    private void setActivityTitle(final String title) {
+        activityTitle = title;
+        if (getView() != null) {
+            getView().setTitle(title);
+        }
     }
 
     private final static String STATE_CURRENT_CHANNEL = "me.gberg.matterdroid.activities.MainActivity.state.current_channel";
