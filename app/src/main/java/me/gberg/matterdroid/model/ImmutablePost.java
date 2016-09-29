@@ -103,7 +103,7 @@ public abstract class ImmutablePost {
         }
 
         // Too much time past since last post.
-        if (previousPost.createAt() + 900000 < this.createAt()) {
+        if (previousPost.createAt() + 300000 < this.createAt()) {
             return true;
         }
 
