@@ -206,6 +206,10 @@ public class MainActivity extends PresentedActivity {
         postsView.scrollToPosition(position);
     }
 
+    public void scrollPostsListToPosition(int position) {
+        postsView.smoothScrollToPosition(position);
+    }
+
     public static void launch(final Activity activity) {
         Intent intent = new Intent(activity, MainActivity.class);
         activity.startActivity(intent);

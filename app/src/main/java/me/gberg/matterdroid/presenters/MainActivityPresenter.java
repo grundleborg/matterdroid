@@ -526,6 +526,8 @@ public class MainActivityPresenter extends AbstractActivityPresenter<MainActivit
         }
 
         postsManager.createNewPost(text.toString());
+
+        getView().scrollPostsListToPosition(0);
     }
 
     public boolean drawerItemClicked(final Drawer drawer, long id, final IDrawerItem drawerItem) {
