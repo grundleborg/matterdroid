@@ -32,6 +32,13 @@ public interface TeamAPI {
             @Path("count") int count
     );
 
+    @GET("api/v3/teams/{teamId}/channels/{channelId}/posts/since/{time}")
+    Observable<Response<Posts>> postsSince(
+            @Path("teamId") String teamId,
+            @Path("channelId") String channelId,
+            @Path("time") long time
+    );
+
     @GET("api/v3/teams/{teamId}/channels/{channelId}/extra_info")
     Observable<Response<ExtraInfo>> extraInfo(
             @Path("teamId") String teamId,

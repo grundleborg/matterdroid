@@ -64,6 +64,59 @@ public class PostsManager {
                         }
                     }
                 });
+
+        // Observe the bus for connection resets.
+        bus.getConnectionStateSubject()
+                .subscribe(new Action1<WebSocketManager.ConnectionState>() {
+                    @Override
+                    public void call(final WebSocketManager.ConnectionState connectionState) {
+                        if (connectionState == WebSocketManager.ConnectionState.Connected) {
+                            reloadPosts();
+                        }
+                    }
+                });
+    }
+
+    public void reloadPosts() {
+        // If the channel is currently set, and there's more than 1 post, then do a full reload.
+        if (channel == null || posts == null || posts.size() == 0) {
+            return;
+        }
+
+        Timber.v("reloadPosts()");
+
+        Observable<Response<Posts>> loadSinceObservabe = teamApi.postsSince(team.id(), channel.id(), posts.get(posts.size()-1).createAt());
+        loadSinceObservabe.subscribeOn(Schedulers.newThread())
+                .observeOn(Schedulers.computation())
+                .subscribe(new Subscriber<Response<Posts>>() {
+                    @Override
+                    public void onCompleted() {
+                        Timber.v("Completed");
+                    }
+
+                    @Override
+                    public void onError(final Throwable e) {
+                        Timber.e(e, "loadSinceObservable threw error.");
+                    }
+
+                    @Override
+                    public void onNext(final Response<Posts> response) {
+                        // Handle HTTP Response errors.
+                        if (!response.isSuccessful()) {
+                            APIError apiError = errorParser.parseError(response);
+                            Timber.e("Posts Since Error: " + apiError.statusCode() + apiError.detailedError());
+                        }
+
+                        posts = new ArrayList<Post>();
+                        postsMap = new HashMap<String, Post>();
+                        for (String id: response.body().order()) {
+                            final Post post = response.body().posts().get(id);
+                            posts.add(post);
+                            postsMap.put(post.id(), post);
+                        }
+                        bus.getPostsSubject().onNext(new PostsEvent(new ArrayList<Post>(posts), false, true));
+                    }
+                });
     }
 
     public void setChannel(final Channel channel) {
@@ -151,18 +204,6 @@ public class PostsManager {
                     }
                 });
         return true;
-    }
-
-    public void emitMessages() {
-        Single.create(new Single.OnSubscribe<Void>() {
-            @Override
-            public void call(final SingleSubscriber<? super Void> singleSubscriber) {
-                if (posts != null) {
-                    bus.getPostsSubject().onNext(new PostsEvent(new ArrayList<Post>(posts)));
-                }
-                singleSubscriber.onSuccess(null);
-            }
-        }).subscribeOn(Schedulers.computation()).subscribe();
     }
 
     public void handlePostedMessage(final PostedMessage message) {

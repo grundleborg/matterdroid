@@ -198,6 +198,14 @@ public class MainActivity extends PresentedActivity {
         shouldAutoScroll = false;
     }
 
+    public int getPostsListPosition() {
+        return ((LinearLayoutManager) postsView.getLayoutManager()).findFirstCompletelyVisibleItemPosition();
+    }
+
+    public void setPostsListPosition(int position) {
+        postsView.scrollToPosition(position);
+    }
+
     public static void launch(final Activity activity) {
         Intent intent = new Intent(activity, MainActivity.class);
         activity.startActivity(intent);

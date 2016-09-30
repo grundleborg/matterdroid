@@ -15,8 +15,6 @@ import java.io.StringWriter;
 import java.io.Writer;
 import java.util.List;
 
-import timber.log.Timber;
-
 @Value.Immutable
 public abstract class ImmutablePost {
 

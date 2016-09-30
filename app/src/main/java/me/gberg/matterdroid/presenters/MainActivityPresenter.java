@@ -74,6 +74,7 @@ public class MainActivityPresenter extends AbstractActivityPresenter<MainActivit
     private boolean noMoreScrollBack = false;
     private String activityTitle;
     private boolean isScrollback = false;
+    private boolean isPostsListReset = false;
 
     // Utils
     private ProfileImagePicasso profileImagePicasso;
@@ -274,6 +275,10 @@ public class MainActivityPresenter extends AbstractActivityPresenter<MainActivit
             isScrollback = true;
         }
 
+        if (postsEvent.isReset()) {
+            isPostsListReset = true;
+        }
+
         // React to the posts list changing.
         updatePosts();
     }
@@ -362,6 +367,18 @@ public class MainActivityPresenter extends AbstractActivityPresenter<MainActivit
             isScrollback = false;
         }
 
+        // Short-circuit if the posts list has been reset.
+        if (isPostsListReset) {
+            Timber.v("posts is reset -> skip diffing and just apply new list direct.");
+            int position = getView().getPostsListPosition();
+            posts = newPosts;
+            postsAdapter.clear();
+            addPostsToAdapter(newPosts, 0);
+            isPostsListReset = false;
+            getView().setPostsListPosition(position);
+            return;
+        }
+
         Timber.d("About to start removing posts. Posts Size: " + posts.size()
                 + " New Posts Size: " + newPosts.size()
                 + " Adapter Size: " + postsAdapter.getAdapterItemCount());
@@ -385,6 +402,13 @@ public class MainActivityPresenter extends AbstractActivityPresenter<MainActivit
         Timber.d("About to start adding new posts. Posts Size: " + posts.size()
                 + " New Posts Size: " + newPosts.size()
                 + " Adapter Size: " + postsAdapter.getAdapterItemCount());
+
+        // Special case for if the posts list is empty.
+        if (posts.size() == 0) {
+            Timber.d("Posts is empty after deleting. Add all the new ones automatically.");
+            addPostsToAdapter(newPosts, 0);
+            return;
+        }
 
         // Now add the new posts.
         int sliceStart = 0;
@@ -447,7 +471,6 @@ public class MainActivityPresenter extends AbstractActivityPresenter<MainActivit
             } catch (ClassCastException e) {
                 // Not a PostItem, so ignore it.
             }
-
         }
 
         // Iterate through the posts to be added in *reverse order*, but once we have decided which
