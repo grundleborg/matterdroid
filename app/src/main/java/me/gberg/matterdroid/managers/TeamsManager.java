@@ -27,7 +27,8 @@ public class TeamsManager {
 
     public void loadAvailableTeams() {
         Observable<Response<InitialLoad>> initialLoadObservable = userAPI.initialLoad();
-        initialLoadObservable.subscribeOn(Schedulers.newThread())
+        initialLoadObservable
+                .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(new Subscriber<Response<InitialLoad>>() {
                     @Override

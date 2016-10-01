@@ -1,5 +1,7 @@
 package me.gberg.matterdroid.managers;
 
+import android.os.HandlerThread;
+
 import org.joda.time.DateTime;
 
 import java.util.ArrayList;
@@ -25,6 +27,7 @@ import rx.Observable;
 import rx.Single;
 import rx.SingleSubscriber;
 import rx.Subscriber;
+import rx.android.schedulers.AndroidSchedulers;
 import rx.functions.Action1;
 import rx.schedulers.Schedulers;
 import timber.log.Timber;
@@ -41,6 +44,8 @@ public class PostsManager {
     private List<Post> posts;
     private Map<String, Post> postsMap;
 
+    private HandlerThread thread;
+
     public PostsManager(final TeamBus bus, final Team team, final TeamAPI teamApi,
                         final SessionManager sessionManager, ErrorParser errorParser) {
         this.bus = bus;
@@ -51,8 +56,11 @@ public class PostsManager {
 
         Timber.v("PostsManager constructed.");
 
+        thread = new HandlerThread("PostsManagerWorker");
+        thread.start();
+
         bus.toWebSocketBusObservable()
-                .observeOn(Schedulers.computation())
+                .observeOn(AndroidSchedulers.from(thread.getLooper()))
                 .subscribe(new  Action1<IWebSocketMessage>() {
                     @Override
                     public void call(IWebSocketMessage message) {
@@ -68,6 +76,7 @@ public class PostsManager {
 
         // Observe the bus for connection resets.
         bus.getConnectionStateSubject()
+                .observeOn(AndroidSchedulers.from(thread.getLooper()))
                 .subscribe(new Action1<WebSocketManager.ConnectionState>() {
                     @Override
                     public void call(final WebSocketManager.ConnectionState connectionState) {
@@ -87,8 +96,9 @@ public class PostsManager {
         Timber.v("reloadPosts()");
 
         Observable<Response<Posts>> loadSinceObservabe = teamApi.postsSince(team.id(), channel.id(), posts.get(posts.size()-1).createAt()-1);
-        loadSinceObservabe.subscribeOn(Schedulers.newThread())
-                .observeOn(Schedulers.computation())
+        loadSinceObservabe
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.from(thread.getLooper()))
                 .subscribe(new Subscriber<Response<Posts>>() {
                     @Override
                     public void onCompleted() {
@@ -129,8 +139,9 @@ public class PostsManager {
 
         // Load the initial set of message for this channel.
         Observable<Response<Posts>> initialLoadObservable = teamApi.posts(team.id(), channel.id(), 0, 60);
-        initialLoadObservable.subscribeOn(Schedulers.newThread())
-                .observeOn(Schedulers.computation())
+        initialLoadObservable
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.from(thread.getLooper()))
                 .subscribe(new Subscriber<Response<Posts>>() {
                     @Override
                     public void onCompleted() {
@@ -170,8 +181,9 @@ public class PostsManager {
             return false;
         }
         Observable<Response<Posts>> morePostsObservable = teamApi.postsBefore(team.id(), channel.id(), posts.get(posts.size() - 1).id(), 0, 60);
-        morePostsObservable.subscribeOn(Schedulers.newThread())
-                .observeOn(Schedulers.computation())
+        morePostsObservable
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.from(thread.getLooper()))
                 .subscribe(new Subscriber<Response<Posts>>() {
                     @Override
                     public void onCompleted() {
@@ -277,8 +289,9 @@ public class PostsManager {
                 }
 
                 Observable<Response<Post>> createPostObservable = teamApi.createPost(team.id(), channel.id(), post);
-                createPostObservable.subscribeOn(Schedulers.newThread())
-                        .observeOn(Schedulers.computation())
+                createPostObservable
+                        .subscribeOn(Schedulers.io())
+                        .observeOn(AndroidSchedulers.from(thread.getLooper()))
                         .subscribe(new Subscriber<Response<Post>>() {
                             @Override
                             public void onCompleted() {
@@ -309,6 +322,8 @@ public class PostsManager {
 
                 singleSubscriber.onSuccess(post);
             }
-        }).subscribeOn(Schedulers.computation()).subscribe();
+        })
+                .subscribeOn(AndroidSchedulers.from(thread.getLooper()))
+                .subscribe();
     }
 }

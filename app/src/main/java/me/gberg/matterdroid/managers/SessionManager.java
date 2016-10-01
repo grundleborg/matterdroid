@@ -141,7 +141,8 @@ public class SessionManager {
         final ErrorParser errorParser = apiModule.providesErrorParser(retrofit);
 
         Observable<Response<User>> meObservable = userAPI.me();
-        meObservable.subscribeOn(Schedulers.newThread())
+        meObservable
+                .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(new Subscriber<Response<User>>() {
                     @Override
@@ -192,7 +193,8 @@ public class SessionManager {
                 .setToken(null)
                 .build();
         Observable<Response<User>> loginObservable = loginService.login(loginRequest);
-        loginObservable.subscribeOn(Schedulers.newThread())
+        loginObservable
+                .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(new Subscriber<Response<User>>() {
                     @Override

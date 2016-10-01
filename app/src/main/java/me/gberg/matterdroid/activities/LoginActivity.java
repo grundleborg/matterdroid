@@ -33,6 +33,7 @@ import me.gberg.matterdroid.events.LoginEvent;
 import me.gberg.matterdroid.managers.SessionManager;
 import me.gberg.matterdroid.model.APIError;
 import me.gberg.matterdroid.utils.rx.Bus;
+import rx.android.schedulers.AndroidSchedulers;
 import rx.functions.Action1;
 import timber.log.Timber;
 
@@ -75,6 +76,7 @@ public class LoginActivity extends NaviAppCompatActivity {
         // Subscribe to the event bus.
         bus.toObserverable()
                 .compose(lifecycleProvider.bindToLifecycle())
+                .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(new Action1<Object>() {
                     @Override
                     public void call(Object event) {

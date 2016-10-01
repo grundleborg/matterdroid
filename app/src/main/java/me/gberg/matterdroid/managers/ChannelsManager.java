@@ -38,6 +38,7 @@ public class ChannelsManager {
 
         // Observe the bus for connection resets.
         bus.getConnectionStateSubject()
+                .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(new Action1<WebSocketManager.ConnectionState>() {
                     @Override
                     public void call(final WebSocketManager.ConnectionState connectionState) {
@@ -50,7 +51,7 @@ public class ChannelsManager {
 
     private void loadChannels() {
         Observable<Response<Channels>> observable = teamApi.channels(team.id());
-        observable.subscribeOn(Schedulers.newThread())
+        observable.subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(new Subscriber<Response<Channels>>() {
                     @Override

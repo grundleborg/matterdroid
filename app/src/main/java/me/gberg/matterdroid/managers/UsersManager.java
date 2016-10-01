@@ -34,6 +34,7 @@ public class UsersManager {
 
         // Observe the bus for connection resets.
         bus.getConnectionStateSubject()
+                .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(new Action1<WebSocketManager.ConnectionState>() {
                     @Override
                     public void call(final WebSocketManager.ConnectionState connectionState) {
@@ -46,7 +47,8 @@ public class UsersManager {
 
     private void loadUsers() {
         Observable<Response<Map<String, User>>> initialLoadObservable = userAPI.users(team.id());
-        initialLoadObservable.subscribeOn(Schedulers.newThread())
+        initialLoadObservable
+                .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(new Subscriber<Response<Map<String, User>>>() {
                     @Override

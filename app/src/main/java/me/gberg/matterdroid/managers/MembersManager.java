@@ -45,7 +45,8 @@ public class MembersManager {
 
         // Load the extra info for this channel.
         Observable<Response<ExtraInfo>> initialLoadObservable = teamApi.extraInfo(team.id(), channel.id());
-        initialLoadObservable.subscribeOn(Schedulers.newThread())
+        initialLoadObservable
+                .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(new Subscriber<Response<ExtraInfo>>() {
                     @Override
