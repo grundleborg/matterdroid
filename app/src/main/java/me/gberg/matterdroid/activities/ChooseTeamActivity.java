@@ -5,6 +5,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
 import android.support.design.widget.FloatingActionButton;
+import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.widget.DefaultItemAnimator;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
@@ -55,6 +56,9 @@ public class ChooseTeamActivity extends NaviAppCompatActivity {
 
     @BindView(R.id.co_choose_team_list)
     RecyclerView chooseTeamList;
+
+    @BindView(R.id.co_choose_team_refresh)
+    SwipeRefreshLayout teamsRefreshLayout;
 
     @Inject
     Bus bus;
@@ -109,6 +113,9 @@ public class ChooseTeamActivity extends NaviAppCompatActivity {
         chooseTeamList.setItemAnimator(new DefaultItemAnimator());
         chooseTeamList.setLayoutManager(new LinearLayoutManager(this));
 
+        teamsRefreshLayout.setEnabled(false);
+        teamsRefreshLayout.setRefreshing(true);
+
         teamsAdapter = new FastItemAdapter();
         chooseTeamList.setAdapter(teamsAdapter);
 
@@ -160,6 +167,8 @@ public class ChooseTeamActivity extends NaviAppCompatActivity {
 
         // Update what's shown in the adapter.
         teamsAdapter.set(teamItems);
+
+        teamsRefreshLayout.setRefreshing(false);
     }
 
     public static void launch(final Activity activity) {
