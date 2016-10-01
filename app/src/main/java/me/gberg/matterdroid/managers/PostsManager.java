@@ -85,7 +85,7 @@ public class PostsManager {
 
         Timber.v("reloadPosts()");
 
-        Observable<Response<Posts>> loadSinceObservabe = teamApi.postsSince(team.id(), channel.id(), posts.get(posts.size()-1).createAt());
+        Observable<Response<Posts>> loadSinceObservabe = teamApi.postsSince(team.id(), channel.id(), posts.get(posts.size()-1).createAt()-1);
         loadSinceObservabe.subscribeOn(Schedulers.newThread())
                 .observeOn(Schedulers.computation())
                 .subscribe(new Subscriber<Response<Posts>>() {
