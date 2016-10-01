@@ -38,7 +38,7 @@ import me.gberg.matterdroid.model.Channels;
 import me.gberg.matterdroid.model.Post;
 import me.gberg.matterdroid.model.Users;
 import me.gberg.matterdroid.utils.picasso.ProfileImagePicasso;
-import me.gberg.matterdroid.utils.rx.Bus;
+import me.gberg.matterdroid.utils.rx.TeamBus;
 import okhttp3.OkHttpClient;
 import rx.Single;
 import rx.SingleSubscriber;
@@ -51,7 +51,7 @@ import timber.log.Timber;
 public class MainActivityPresenter extends AbstractActivityPresenter<MainActivity> {
 
     // Injected dependencies.
-    private final Bus bus;
+    private final TeamBus bus;
     private final OkHttpClient httpClient;
     private final ChannelsManager channelsManager;
     private final PostsManager postsManager;
@@ -83,7 +83,7 @@ public class MainActivityPresenter extends AbstractActivityPresenter<MainActivit
     private Subscription webSocketTimeoutSubscription;
 
     @Inject
-    public MainActivityPresenter(final Bus bus, final ChannelsManager channelsManager,
+    public MainActivityPresenter(final TeamBus bus, final ChannelsManager channelsManager,
                                  final MembersManager membersManager, final PostsManager postsManager,
                                  final SessionManager sessionManager, final UsersManager usersManager,
                                  final WebSocketManager webSocketManager, final OkHttpClient httpClient) {
@@ -250,6 +250,22 @@ public class MainActivityPresenter extends AbstractActivityPresenter<MainActivit
         if (channel != null) {
             bundle.putString(STATE_CURRENT_CHANNEL, channel.id());
         }
+    }
+
+    @Override
+    public void leaveScope() {
+        super.leaveScope();
+
+        Timber.v("leaveScope()");
+
+        // Make sure there's no references to this presenter hanging around.
+        if (webSocketTimeoutSubscription != null) {
+            webSocketTimeoutSubscription.unsubscribe();
+            webSocketTimeoutSubscription = null;
+        }
+
+        // Disconnect from the web socket.
+        webSocketManager.disconnect();
     }
 
     private void handleConnectionStateChanged(final WebSocketManager.ConnectionState connectionState) {

@@ -11,7 +11,7 @@ import me.gberg.matterdroid.model.Channel;
 import me.gberg.matterdroid.model.Channels;
 import me.gberg.matterdroid.model.Team;
 import me.gberg.matterdroid.utils.retrofit.ErrorParser;
-import me.gberg.matterdroid.utils.rx.Bus;
+import me.gberg.matterdroid.utils.rx.TeamBus;
 import retrofit2.Response;
 import rx.Observable;
 import rx.Subscriber;
@@ -22,14 +22,14 @@ import timber.log.Timber;
 
 public class ChannelsManager {
 
-    private Bus bus;
+    private TeamBus bus;
     private final Team team;
     private final TeamAPI teamApi;
     private final ErrorParser errorParser;
 
     private Channels channels;
 
-    public ChannelsManager(final Bus bus, final Team team, final TeamAPI teamApi,
+    public ChannelsManager(final TeamBus bus, final Team team, final TeamAPI teamApi,
                            ErrorParser errorParser) {
         this.bus = bus;
         this.team = team;

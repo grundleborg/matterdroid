@@ -9,7 +9,6 @@ import java.util.Map;
 
 import me.gberg.matterdroid.api.TeamAPI;
 import me.gberg.matterdroid.events.PostsEvent;
-import me.gberg.matterdroid.events.RemovePostEvent;
 import me.gberg.matterdroid.model.APIError;
 import me.gberg.matterdroid.model.Channel;
 import me.gberg.matterdroid.model.IWebSocketMessage;
@@ -20,7 +19,7 @@ import me.gberg.matterdroid.model.PostedMessage;
 import me.gberg.matterdroid.model.Posts;
 import me.gberg.matterdroid.model.Team;
 import me.gberg.matterdroid.utils.retrofit.ErrorParser;
-import me.gberg.matterdroid.utils.rx.Bus;
+import me.gberg.matterdroid.utils.rx.TeamBus;
 import retrofit2.Response;
 import rx.Observable;
 import rx.Single;
@@ -32,7 +31,7 @@ import timber.log.Timber;
 
 public class PostsManager {
 
-    private final Bus bus;
+    private final TeamBus bus;
     private final Team team;
     private final TeamAPI teamApi;
     private final SessionManager sessionManager;
@@ -42,13 +41,15 @@ public class PostsManager {
     private List<Post> posts;
     private Map<String, Post> postsMap;
 
-    public PostsManager(final Bus bus, final Team team, final TeamAPI teamApi,
+    public PostsManager(final TeamBus bus, final Team team, final TeamAPI teamApi,
                         final SessionManager sessionManager, ErrorParser errorParser) {
         this.bus = bus;
         this.team = team;
         this.teamApi = teamApi;
         this.sessionManager = sessionManager;
         this.errorParser = errorParser;
+
+        Timber.v("PostsManager constructed.");
 
         bus.toWebSocketBusObservable()
                 .observeOn(Schedulers.computation())
@@ -232,7 +233,6 @@ public class PostsManager {
                 postsMap.remove(post.pendingPostId());
                 int removedPosition = posts.indexOf(replacedPost);
                 posts.remove(removedPosition);
-                bus.send(new RemovePostEvent(removedPosition));
             }
         }
 

@@ -8,7 +8,7 @@ import me.gberg.matterdroid.model.Team;
 import me.gberg.matterdroid.model.User;
 import me.gberg.matterdroid.model.Users;
 import me.gberg.matterdroid.utils.retrofit.ErrorParser;
-import me.gberg.matterdroid.utils.rx.Bus;
+import me.gberg.matterdroid.utils.rx.TeamBus;
 import retrofit2.Response;
 import rx.Observable;
 import rx.Subscriber;
@@ -21,12 +21,12 @@ public class UsersManager {
 
     private final Team team;
     private final UserAPI userAPI;
-    private final Bus bus;
+    private final TeamBus bus;
     private final ErrorParser errorParser;
 
     private Users users;
 
-    public UsersManager(final Team team, final UserAPI userAPI, final Bus bus, final ErrorParser errorParser) {
+    public UsersManager(final Team team, final UserAPI userAPI, final TeamBus bus, final ErrorParser errorParser) {
         this.team = team;
         this.userAPI = userAPI;
         this.bus = bus;

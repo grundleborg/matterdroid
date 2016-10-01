@@ -9,7 +9,7 @@ import me.gberg.matterdroid.model.ExtraInfo;
 import me.gberg.matterdroid.model.Member;
 import me.gberg.matterdroid.model.Team;
 import me.gberg.matterdroid.utils.retrofit.ErrorParser;
-import me.gberg.matterdroid.utils.rx.Bus;
+import me.gberg.matterdroid.utils.rx.TeamBus;
 import retrofit2.Response;
 import rx.Observable;
 import rx.Subscriber;
@@ -20,7 +20,7 @@ import timber.log.Timber;
 public class MembersManager {
 
     private final ErrorParser errorParser;
-    private final Bus bus;
+    private final TeamBus bus;
     private final Team team;
     private final TeamAPI teamApi;
 
@@ -28,7 +28,7 @@ public class MembersManager {
     private HashMap<String, Member> members;
 
     public MembersManager(final ErrorParser errorParser,
-                          final Bus bus,
+                          final TeamBus bus,
                           final Team team,
                           final TeamAPI teamAPI) {
         this.errorParser = errorParser;

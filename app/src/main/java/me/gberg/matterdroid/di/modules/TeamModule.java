@@ -15,7 +15,7 @@ import me.gberg.matterdroid.managers.UsersManager;
 import me.gberg.matterdroid.managers.WebSocketManager;
 import me.gberg.matterdroid.model.Team;
 import me.gberg.matterdroid.utils.retrofit.ErrorParser;
-import me.gberg.matterdroid.utils.rx.Bus;
+import me.gberg.matterdroid.utils.rx.TeamBus;
 import retrofit2.Retrofit;
 
 @Module
@@ -41,32 +41,38 @@ public class TeamModule {
 
     @Provides
     @TeamScope
-    ChannelsManager providesChannelsManager(Bus bus, Team team, TeamAPI teamApi, ErrorParser errorParser) {
+    TeamBus teamBus() {
+        return new TeamBus();
+    }
+
+    @Provides
+    @TeamScope
+    ChannelsManager providesChannelsManager(TeamBus bus, Team team, TeamAPI teamApi, ErrorParser errorParser) {
         return new ChannelsManager(bus, team, teamApi, errorParser);
     }
 
     @Provides
     @TeamScope
-    PostsManager providesPostsManager(Bus bus, Team team, TeamAPI teamApi, SessionManager sessionManager, ErrorParser errorParser) {
+    PostsManager providesPostsManager(TeamBus bus, Team team, TeamAPI teamApi, SessionManager sessionManager, ErrorParser errorParser) {
         return new PostsManager(bus, team, teamApi, sessionManager, errorParser);
     }
 
     @Provides
     @TeamScope
-    MembersManager providesMembersManager(Bus bus, Team team, TeamAPI teamAPI, ErrorParser errorParser) {
+    MembersManager providesMembersManager(TeamBus bus, Team team, TeamAPI teamAPI, ErrorParser errorParser) {
         return new MembersManager(errorParser, bus, team, teamAPI);
     }
 
     @Provides
     @TeamScope
-    WebSocketManager providesWebSocketManager(Bus bus, Team team, Gson gson,
+    WebSocketManager providesWebSocketManager(TeamBus bus, Team team, Gson gson,
                                               SessionManager sessionManager, ErrorParser errorParser) {
         return new WebSocketManager(bus, team, gson, sessionManager, errorParser);
     }
 
     @Provides
     @TeamScope
-    UsersManager providesUsersManager(Team team, UserAPI userAPI, Bus bus, ErrorParser errorParser) {
+    UsersManager providesUsersManager(Team team, UserAPI userAPI, TeamBus bus, ErrorParser errorParser) {
         return new UsersManager(team, userAPI, bus, errorParser);
     }
 }
