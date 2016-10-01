@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   xmlns:dc="http://purl.org/dc/elements/1.1/"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   id="svg3050"
+   version="1.1"
+   inkscape:version="0.48.5 r10040"
+   width="407"
+   height="407"
+   sodipodi:docname="material icon template.png">
+  <metadata
+     id="metadata3056">
+    <rdf:RDF>
+      <cc:Work
+         rdf:about="">
+        <dc:format>image/svg+xml</dc:format>
+        <dc:type
+           rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
+        <dc:title></dc:title>
+      </cc:Work>
+    </rdf:RDF>
+  </metadata>
+  <defs
+     id="defs3054">
+    <filter
+       inkscape:label="Drop Shadow"
+       id="filter3127"
+       color-interpolation-filters="sRGB">
+      <feFlood
+         flood-opacity="0.5"
+         flood-color="rgb(0,0,0)"
+         result="flood"
+         id="feFlood3129" />
+      <feComposite
+         in="flood"
+         in2="SourceGraphic"
+         operator="in"
+         result="composite1"
+         id="feComposite3131" />
+      <feGaussianBlur
+         stdDeviation="4"
+         result="blur"
+         id="feGaussianBlur3133" />
+      <feOffset
+         dx="8"
+         dy="8"
+         result="offset"
+         id="feOffset3135" />
+      <feComposite
+         in="SourceGraphic"
+         in2="offset"
+         operator="over"
+         result="composite2"
+         id="feComposite3137" />
+    </filter>
+  </defs>
+  <sodipodi:namedview
+     pagecolor="#ffffff"
+     bordercolor="#666666"
+     borderopacity="1"
+     objecttolerance="10"
+     gridtolerance="10"
+     guidetolerance="10"
+     inkscape:pageopacity="0"
+     inkscape:pageshadow="2"
+     inkscape:window-width="1274"
+     inkscape:window-height="1062"
+     id="namedview3052"
+     showgrid="false"
+     inkscape:zoom="0.66292135"
+     inkscape:cx="479.30527"
+     inkscape:cy="161.87547"
+     inkscape:window-x="1223"
+     inkscape:window-y="91"
+     inkscape:window-maximized="0"
+     inkscape:current-layer="svg3050" />
+  <rect
+     style="fill:#2f81b7;fill-opacity:1;stroke:none"
+     id="rect3062"
+     width="407"
+     height="407"
+     x="0"
+     y="0"
+     ry="32.562725" />
+  <text
+     xml:space="preserve"
+     style="font-size:38.76647568px;font-style:normal;font-weight:normal;line-height:125%;letter-spacing:0px;word-spacing:0px;fill:#ffffff;fill-opacity:1;stroke:none;filter:url(#filter3127);font-family:Sans"
+     x="271.33191"
+     y="547.88123"
+     id="text2990"
+     sodipodi:linespacing="125%"
+     transform="matrix(1.0069807,0,0,0.99360424,-243.9184,-199.3706)"
+     inkscape:transform-center-x="2.2628181"><tspan
+       sodipodi:role="line"
+       id="tspan2992"
+       x="271.33191"
+       y="547.88123"
+       style="font-size:400px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;fill:#ffffff;font-family:Roboto;-inkscape-font-specification:Roboto">M</tspan></text>
+</svg>
