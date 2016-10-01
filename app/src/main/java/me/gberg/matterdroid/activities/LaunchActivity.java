@@ -1,9 +1,12 @@
 package me.gberg.matterdroid.activities;
 
 import android.os.Bundle;
-import android.support.v7.app.AppCompatActivity;
 
 import com.google.gson.Gson;
+import com.trello.navi.component.support.NaviAppCompatActivity;
+import com.trello.rxlifecycle.LifecycleProvider;
+import com.trello.rxlifecycle.android.ActivityEvent;
+import com.trello.rxlifecycle.navi.NaviLifecycle;
 
 import javax.inject.Inject;
 
@@ -16,7 +19,10 @@ import me.gberg.matterdroid.utils.rx.Bus;
 import rx.functions.Action1;
 import timber.log.Timber;
 
-public class LaunchActivity extends AppCompatActivity {
+public class LaunchActivity extends NaviAppCompatActivity {
+
+    private final LifecycleProvider<ActivityEvent> lifecycleProvider
+            = NaviLifecycle.createActivityLifecycleProvider(this);
 
     @Inject
     App app;
@@ -39,8 +45,8 @@ public class LaunchActivity extends AppCompatActivity {
         ((App) getApplication()).getAppComponent().inject(this);
 
         // Subscribe to the event bus.
-        // TODO: Unsubscribe at the correct lifecycle events.
         bus.toObserverable()
+                .compose(lifecycleProvider.bindToLifecycle())
                 .subscribe(new Action1<Object>() {
                     @Override
                     public void call(Object event) {

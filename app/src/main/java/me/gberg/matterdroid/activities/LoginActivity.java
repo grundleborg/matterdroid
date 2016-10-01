@@ -4,7 +4,6 @@ import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
-import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.util.Patterns;
 import android.view.KeyEvent;
@@ -16,6 +15,10 @@ import android.widget.EditText;
 import android.widget.TextView;
 
 import com.google.gson.Gson;
+import com.trello.navi.component.support.NaviAppCompatActivity;
+import com.trello.rxlifecycle.LifecycleProvider;
+import com.trello.rxlifecycle.android.ActivityEvent;
+import com.trello.rxlifecycle.navi.NaviLifecycle;
 
 import java.util.regex.Pattern;
 
@@ -33,7 +36,10 @@ import me.gberg.matterdroid.utils.rx.Bus;
 import rx.functions.Action1;
 import timber.log.Timber;
 
-public class LoginActivity extends AppCompatActivity {
+public class LoginActivity extends NaviAppCompatActivity {
+
+    private final LifecycleProvider<ActivityEvent> lifecycleProvider
+            = NaviLifecycle.createActivityLifecycleProvider(this);
 
     @BindView(R.id.co_login_server)
     TextView serverView;
@@ -67,8 +73,8 @@ public class LoginActivity extends AppCompatActivity {
         ((App) getApplication()).getAppComponent().inject(this);
 
         // Subscribe to the event bus.
-        // TODO: Unsubscribe at the correct lifecycle events.
         bus.toObserverable()
+                .compose(lifecycleProvider.bindToLifecycle())
                 .subscribe(new Action1<Object>() {
                     @Override
                     public void call(Object event) {
@@ -138,7 +144,7 @@ public class LoginActivity extends AppCompatActivity {
             return;
         }
 
-        // Advance to the Choose Team activity and finalise this one.#
+        // Advance to the Choose Team activity and finalise this one.
         sessionManager.setUser(event.getUser());
         ChooseTeamActivity.launch(this);
         finish();
