@@ -4,6 +4,7 @@
 
     <!-- General -->
     <string name="general_system_user_name">System</string>
+    <string name="general_post_deleted_text">*(message deleted)*</string>
 
     <!-- Activity: Login -->
     <string name="title_activity_login">Sign In</string>

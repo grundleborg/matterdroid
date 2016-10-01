@@ -7,8 +7,11 @@ import org.joda.time.DateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.ListIterator;
 import java.util.Map;
 
+import me.gberg.matterdroid.App;
+import me.gberg.matterdroid.R;
 import me.gberg.matterdroid.api.TeamAPI;
 import me.gberg.matterdroid.events.PostsEvent;
 import me.gberg.matterdroid.model.APIError;
@@ -39,6 +42,7 @@ public class PostsManager {
     private final TeamAPI teamApi;
     private final SessionManager sessionManager;
     private final ErrorParser errorParser;
+    private final App app;
 
     private Channel channel;
     private List<Post> posts;
@@ -46,8 +50,9 @@ public class PostsManager {
 
     private HandlerThread thread;
 
-    public PostsManager(final TeamBus bus, final Team team, final TeamAPI teamApi,
+    public PostsManager(final App app, final TeamBus bus, final Team team, final TeamAPI teamApi,
                         final SessionManager sessionManager, ErrorParser errorParser) {
+        this.app = app;
         this.bus = bus;
         this.team = team;
         this.teamApi = teamApi;
@@ -95,7 +100,7 @@ public class PostsManager {
 
         Timber.v("reloadPosts()");
 
-        Observable<Response<Posts>> loadSinceObservabe = teamApi.postsSince(team.id(), channel.id(), posts.get(posts.size()-1).createAt()-1);
+        Observable<Response<Posts>> loadSinceObservabe = teamApi.postsSince(team.id(), channel.id(), posts.get(0).createAt());
         loadSinceObservabe
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.from(thread.getLooper()))
@@ -118,14 +123,32 @@ public class PostsManager {
                             Timber.e("Posts Since Error: " + apiError.statusCode() + apiError.detailedError());
                         }
 
-                        posts = new ArrayList<Post>();
-                        postsMap = new HashMap<String, Post>();
-                        for (String id: response.body().order()) {
-                            final Post post = response.body().posts().get(id);
-                            posts.add(post);
+                        ListIterator<String> li = response.body().order().listIterator(response.body().order().size());
+                        while (li.hasPrevious()) {
+                            final Post post = response.body().posts().get(li.previous());
+
+                            // Post already deleted. Don't add it.
+                            if (post.deleteAt() > 0) {
+                                continue;
+                            }
+
+                            // Check if the post is already present.
+                            if (postsMap.containsKey(post.id())) {
+                                // Post is already present. Replace it.
+                                final Post oldPost = postsMap.get(post.id());
+                                int position = posts.indexOf(oldPost);
+                                posts.remove(position);
+                                posts.add(position, post);
+                                postsMap.put(post.id(), post);
+                                continue;
+                            }
+
+                            // Post is not already present.
+                            // TODO: Add the post in the correct place in the sequence of messages.
+                            posts.add(0, post);
                             postsMap.put(post.id(), post);
                         }
-                        bus.getPostsSubject().onNext(new PostsEvent(new ArrayList<Post>(posts), false, true));
+                        bus.getPostsSubject().onNext(new PostsEvent(new ArrayList<Post>(posts)));
                     }
                 });
     }
@@ -262,11 +285,64 @@ public class PostsManager {
     }
 
     public void handlePostEditedMessage(final PostEditedMessage message) {
-        // TODO
+        final Post newPost = message.parsedData().post();
+
+        if (channel == null) {
+            // We aren't listening to any channel at the moment.
+            return;
+        }
+
+        if (!message.webSocketMessage().channelId().equals(channel.id())) {
+            // Message does not belong to the current channel.
+            return;
+        }
+
+        // If the post isn't in the map, we aren't showing it.
+        if (!postsMap.containsKey(newPost.id())) {
+            return;
+        }
+
+        // Remove the old post, and replace it with the new one.
+        final Post oldPost = postsMap.get(newPost.id());
+        int position = posts.indexOf(oldPost);
+        posts.remove(position);
+        posts.add(position, newPost);
+        postsMap.put(newPost.id(), newPost);
+
+        // Emit the posts.
+        bus.getPostsSubject().onNext(new PostsEvent(new ArrayList<Post>(posts)));
     }
 
     public void handlePostDeletedMessage(final PostDeletedMessage message) {
-        // TODO
+        final Post newPost = message.parsedData().post();
+
+        if (channel == null) {
+            // We aren't listening to any channel at the moment.
+            return;
+        }
+
+        if (!message.webSocketMessage().channelId().equals(channel.id())) {
+            // Message does not belong to the current channel.
+            return;
+        }
+
+        // If the post isn't in the map, we aren't showing it.
+        if (!postsMap.containsKey(newPost.id())) {
+            return;
+        }
+
+        // Create a post with the "Message Deleted" text.
+        final Post replacePost = Post.copyOf(newPost).withMessage(app.getResources().getString(R.string.general_post_deleted_text));
+
+        // Remove the old post, and replace it with the new one.
+        final Post oldPost = postsMap.get(newPost.id());
+        int position = posts.indexOf(oldPost);
+        posts.remove(position);
+        posts.add(position, replacePost);
+        postsMap.put(newPost.id(), replacePost);
+
+        // Emit the posts.
+        bus.getPostsSubject().onNext(new PostsEvent(new ArrayList<Post>(posts)));
     }
 
     public void createNewPost(final String message) {

@@ -19,8 +19,8 @@ import java.util.concurrent.TimeUnit;
 import javax.inject.Inject;
 
 import me.gberg.matterdroid.R;
-import me.gberg.matterdroid.adapters.items.ChannelDrawerItem;
 import me.gberg.matterdroid.activities.MainActivity;
+import me.gberg.matterdroid.adapters.items.ChannelDrawerItem;
 import me.gberg.matterdroid.adapters.items.PostBasicSubItem;
 import me.gberg.matterdroid.adapters.items.PostBasicTopItem;
 import me.gberg.matterdroid.adapters.items.PostItem;
@@ -74,7 +74,6 @@ public class MainActivityPresenter extends AbstractActivityPresenter<MainActivit
     private boolean noMoreScrollBack = false;
     private String activityTitle;
     private boolean isScrollback = false;
-    private boolean isPostsListReset = false;
 
     // Utils
     private ProfileImagePicasso profileImagePicasso;
@@ -292,10 +291,6 @@ public class MainActivityPresenter extends AbstractActivityPresenter<MainActivit
             isScrollback = true;
         }
 
-        if (postsEvent.isReset()) {
-            isPostsListReset = true;
-        }
-
         // React to the posts list changing.
         updatePosts();
     }
@@ -384,18 +379,6 @@ public class MainActivityPresenter extends AbstractActivityPresenter<MainActivit
         if (isScrollback) {
             footerAdapter.clear();
             isScrollback = false;
-        }
-
-        // Short-circuit if the posts list has been reset.
-        if (isPostsListReset) {
-            Timber.v("posts is reset -> skip diffing and just apply new list direct.");
-            int position = getView().getPostsListPosition();
-            posts = newPosts;
-            postsAdapter.clear();
-            addPostsToAdapter(newPosts, 0);
-            isPostsListReset = false;
-            getView().setPostsListPosition(position);
-            return;
         }
 
         Timber.d("About to start removing posts. Posts Size: " + posts.size()

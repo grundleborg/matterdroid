@@ -4,6 +4,7 @@ import com.google.gson.Gson;
 
 import dagger.Module;
 import dagger.Provides;
+import me.gberg.matterdroid.App;
 import me.gberg.matterdroid.api.TeamAPI;
 import me.gberg.matterdroid.api.UserAPI;
 import me.gberg.matterdroid.di.scopes.TeamScope;
@@ -53,8 +54,8 @@ public class TeamModule {
 
     @Provides
     @TeamScope
-    PostsManager providesPostsManager(TeamBus bus, Team team, TeamAPI teamApi, SessionManager sessionManager, ErrorParser errorParser) {
-        return new PostsManager(bus, team, teamApi, sessionManager, errorParser);
+    PostsManager providesPostsManager(App app, TeamBus bus, Team team, TeamAPI teamApi, SessionManager sessionManager, ErrorParser errorParser) {
+        return new PostsManager(app, bus, team, teamApi, sessionManager, errorParser);
     }
 
     @Provides
