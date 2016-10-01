@@ -4,6 +4,7 @@ import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
+import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.widget.DefaultItemAnimator;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
@@ -40,6 +41,9 @@ public class MainActivity extends PresentedActivity {
 
     @BindView(R.id.toolbar)
     Toolbar toolbar;
+
+    @BindView(R.id.co_main_messages_refresh)
+    SwipeRefreshLayout postsRefreshView;
 
     @BindView(R.id.co_main_messages_list)
     RecyclerView postsView;
@@ -95,6 +99,9 @@ public class MainActivity extends PresentedActivity {
                     }
                 })
                 .build();
+
+        // Disable pull to refresh.
+        postsRefreshView.setEnabled(false);
 
         // Connect to the presenter.
         presenter.takeView(this, savedInstanceState);
@@ -213,5 +220,9 @@ public class MainActivity extends PresentedActivity {
     public static void launch(final Activity activity) {
         Intent intent = new Intent(activity, MainActivity.class);
         activity.startActivity(intent);
+    }
+
+    public void setPostsRefreshing(boolean refreshing) {
+        postsRefreshView.setRefreshing(refreshing);
     }
 }

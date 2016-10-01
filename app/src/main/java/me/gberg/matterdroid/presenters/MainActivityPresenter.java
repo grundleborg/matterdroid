@@ -207,6 +207,7 @@ public class MainActivityPresenter extends AbstractActivityPresenter<MainActivit
 
         if (connectionState == connectionState.Disconnected) {
             webSocketManager.connect();
+            getView().setPostsRefreshing(true);
         }
     }
 
@@ -351,6 +352,8 @@ public class MainActivityPresenter extends AbstractActivityPresenter<MainActivit
             Timber.v("Not updating posts as we haven't got all the needed state yet.");
             return;
         }
+
+        getView().setPostsRefreshing(false);
 
         // If posts is null, we can short-circuit the delta-application process.
         if (posts == null || posts.isEmpty()) {
@@ -532,6 +535,8 @@ public class MainActivityPresenter extends AbstractActivityPresenter<MainActivit
 
     public boolean drawerItemClicked(final Drawer drawer, long id, final IDrawerItem drawerItem) {
         if (drawerItem instanceof ChannelDrawerItem) {
+
+            getView().setPostsRefreshing(true);
 
             // Reset the ViewModel state.
             channel = ((ChannelDrawerItem) drawerItem).getChannel();

@@ -15,14 +15,21 @@
         android:layout_height="match_parent"
         android:orientation="vertical">
 
-        <android.support.v7.widget.RecyclerView
-            android:id="@+id/co_main_messages_list"
+        <android.support.v4.widget.SwipeRefreshLayout
+            android:id="@+id/co_main_messages_refresh"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:orientation="vertical"
-            android:layout_weight="1"
-            android:paddingBottom="6dp"
-            android:background="@color/colorInverse"/>
+            android:layout_weight="1">
+
+            <android.support.v7.widget.RecyclerView
+                android:id="@+id/co_main_messages_list"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:orientation="vertical"
+                android:paddingBottom="6dp"
+                android:background="@color/colorInverse"/>
+
+        </android.support.v4.widget.SwipeRefreshLayout>
 
         <LinearLayout
             android:layout_width="match_parent"
