@@ -1,4 +1,4 @@
-package me.gberg.matterdroid.activities;
+package me.gberg.matterdroid.adapters.items;
 
 import com.mikepenz.materialdrawer.model.SecondaryDrawerItem;
 

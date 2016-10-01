@@ -19,7 +19,7 @@ import java.util.concurrent.TimeUnit;
 import javax.inject.Inject;
 
 import me.gberg.matterdroid.R;
-import me.gberg.matterdroid.activities.ChannelDrawerItem;
+import me.gberg.matterdroid.adapters.items.ChannelDrawerItem;
 import me.gberg.matterdroid.activities.MainActivity;
 import me.gberg.matterdroid.adapters.items.PostBasicSubItem;
 import me.gberg.matterdroid.adapters.items.PostBasicTopItem;
