@@ -24,6 +24,7 @@
 
     <include layout="@layout/co_choose_team" />
 
+    <!--
     <android.support.design.widget.FloatingActionButton
         android:id="@+id/fab"
         android:layout_width="wrap_content"
@@ -32,5 +33,6 @@
         android:layout_margin="@dimen/fab_margin"
         app:ico_icon="gmd-add"
         app:ico_color="@color/colorInverse"/>
+    -->
 
 </android.support.design.widget.CoordinatorLayout>
