@@ -12,7 +12,7 @@ public abstract class ImmutablePostEditedMessage implements IWebSocketMessage {
                 .setParsedData(PostEditedMessageData.builder()
                         .setPost(post)
                         .build())
-                .setWebSocketMessage(message)
+                .setBroadcast(message.broadcast())
                 .build();
     }
 
@@ -21,7 +21,7 @@ public abstract class ImmutablePostEditedMessage implements IWebSocketMessage {
         public abstract Post post();
     }
 
-    public abstract WebSocketMessage webSocketMessage();
+    public abstract Broadcast broadcast();
 
     public abstract PostEditedMessageData parsedData();
 }

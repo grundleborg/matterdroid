@@ -12,7 +12,7 @@ public abstract class ImmutablePostDeletedMessage implements IWebSocketMessage {
                 .setParsedData(PostDeletedMessageData.builder()
                         .setPost(post)
                         .build())
-                .setWebSocketMessage(message)
+                .setBroadcast(message.broadcast())
                 .build();
     }
 
@@ -21,7 +21,7 @@ public abstract class ImmutablePostDeletedMessage implements IWebSocketMessage {
         public abstract Post post();
     }
 
-    public abstract WebSocketMessage webSocketMessage();
+    public abstract Broadcast broadcast();
 
     public abstract PostDeletedMessageData parsedData();
 }

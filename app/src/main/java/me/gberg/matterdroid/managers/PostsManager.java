@@ -248,7 +248,7 @@ public class PostsManager {
             return;
         }
 
-        if (!message.webSocketMessage().channelId().equals(channel.id())) {
+        if (!message.broadcast().channelId().equals(channel.id())) {
             // Message does not belong to the current channel.
             return;
         }
@@ -292,7 +292,7 @@ public class PostsManager {
             return;
         }
 
-        if (!message.webSocketMessage().channelId().equals(channel.id())) {
+        if (!message.broadcast().channelId().equals(channel.id())) {
             // Message does not belong to the current channel.
             return;
         }
@@ -321,7 +321,7 @@ public class PostsManager {
             return;
         }
 
-        if (!message.webSocketMessage().channelId().equals(channel.id())) {
+        if (!message.broadcast().channelId().equals(channel.id())) {
             // Message does not belong to the current channel.
             return;
         }

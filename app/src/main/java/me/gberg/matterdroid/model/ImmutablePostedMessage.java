@@ -17,7 +17,7 @@ public abstract class ImmutablePostedMessage implements IWebSocketMessage {
                         .setSenderName(message.data().get("sender_name"))
                         .setTeamId(message.data().get("team_id"))
                         .build())
-                .setWebSocketMessage(message)
+                .setBroadcast(message.broadcast())
                 .build();
     }
 
@@ -39,7 +39,7 @@ public abstract class ImmutablePostedMessage implements IWebSocketMessage {
         public abstract String teamId();
     }
 
-    public abstract WebSocketMessage webSocketMessage();
+    public abstract Broadcast broadcast();
 
     public abstract PostedMessageData parsedData();
 }
