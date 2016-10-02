@@ -25,7 +25,7 @@ A very basic feature set is provided at the moment.
 
 * User/Pass based authentication.
 * Changing team.
-* View channels and private groups.
+* Access public channels, private groups and direct messages.
 * Basic Markdown message rendering.
 * Posting text/Markdown messages.
 
@@ -40,7 +40,6 @@ There's a lot this app doesn't do yet, including:
 * Full Markdown support when rendering messages.
 * Auto-linking @mentions and !channels etc.
 * Marking messages as read, and indicating channels with new messages.
-* Direct message channels.
 * Posting images/attachments/etc.
 * Reply threading.
 * Message editing and deltion.
@@ -52,8 +51,16 @@ There's a lot this app doesn't do yet, including:
 Installation
 ------------
 
-There's no ready-made build at the moment. You'll need to build it from source (if there's demand, I
-will look into making a demo-build available on the Play Store).
+### Demo Build
+
+You can install the demo build of this App from the
+[Google Play Store](https://play.google.com/store/apps/details?id=me.gberg.matterdroid). To take it
+for a spin, connect to the server `https://pre-release.mattermost.com` (you'll need to sign up at
+that link in a browser first if you don't already have an account).
+
+### Build Your Own
+
+To build this app from source follow the steps below:
 
 1. Clone this repo.
 2. Use Android Studio to build the project and install it to your device.
