@@ -14,6 +14,7 @@ import com.mikepenz.materialdrawer.model.interfaces.IDrawerItem;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.ListIterator;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 import javax.inject.Inject;
@@ -28,6 +29,7 @@ import me.gberg.matterdroid.adapters.items.PostSystemTopItem;
 import me.gberg.matterdroid.di.scopes.TeamScope;
 import me.gberg.matterdroid.events.PostsEvent;
 import me.gberg.matterdroid.managers.ChannelsManager;
+import me.gberg.matterdroid.managers.DirectProfilesManager;
 import me.gberg.matterdroid.managers.MembersManager;
 import me.gberg.matterdroid.managers.PostsManager;
 import me.gberg.matterdroid.managers.SessionManager;
@@ -36,6 +38,7 @@ import me.gberg.matterdroid.managers.WebSocketManager;
 import me.gberg.matterdroid.model.Channel;
 import me.gberg.matterdroid.model.Channels;
 import me.gberg.matterdroid.model.Post;
+import me.gberg.matterdroid.model.User;
 import me.gberg.matterdroid.model.Users;
 import me.gberg.matterdroid.utils.picasso.ProfileImagePicasso;
 import me.gberg.matterdroid.utils.rx.TeamBus;
@@ -54,6 +57,7 @@ public class MainActivityPresenter extends AbstractActivityPresenter<MainActivit
     private final TeamBus bus;
     private final OkHttpClient httpClient;
     private final ChannelsManager channelsManager;
+    private final DirectProfilesManager directProfilesManager;
     private final PostsManager postsManager;
     private final SessionManager sessionManager;
     private final UsersManager usersManager;
@@ -62,6 +66,7 @@ public class MainActivityPresenter extends AbstractActivityPresenter<MainActivit
     // ViewModel.
     private Channels channels;
     private Users users;
+    private Map<String, User> directProfiles;
     private FastItemAdapter<IItem> postsAdapter;
     private WebSocketManager.ConnectionState connectionState = WebSocketManager.ConnectionState.Disconnected;
     private List<Post> posts;
@@ -85,10 +90,12 @@ public class MainActivityPresenter extends AbstractActivityPresenter<MainActivit
     public MainActivityPresenter(final TeamBus bus, final ChannelsManager channelsManager,
                                  final MembersManager membersManager, final PostsManager postsManager,
                                  final SessionManager sessionManager, final UsersManager usersManager,
-                                 final WebSocketManager webSocketManager, final OkHttpClient httpClient) {
+                                 final WebSocketManager webSocketManager, final OkHttpClient httpClient,
+                                 final DirectProfilesManager directProfilesManager) {
         // Injected dependencies.
         this.bus = bus;
         this.channelsManager = channelsManager;
+        this.directProfilesManager = directProfilesManager;
         this.postsManager = postsManager;
         this.sessionManager = sessionManager;
         this.usersManager = usersManager;
@@ -141,6 +148,18 @@ public class MainActivityPresenter extends AbstractActivityPresenter<MainActivit
                             @Override
                             public void call(final Users users) {
                                 handleUsersChanged(users);
+                            }
+                        })
+        );
+
+        // Subsdribe to the direct profiles list.
+        addSubscription(
+                bus.getDirectProfilesSubject()
+                        .observeOn(AndroidSchedulers.mainThread())
+                        .subscribe(new Action1<Map<String, User>>() {
+                            @Override
+                            public void call(final Map<String, User> directProfiles) {
+                                handleDirectProfilesChanged(directProfiles);
                             }
                         })
         );
@@ -303,11 +322,19 @@ public class MainActivityPresenter extends AbstractActivityPresenter<MainActivit
         updatePosts();
     }
 
+    private void handleDirectProfilesChanged(final Map<String, User> directProfiles) {
+        Timber.v("handleDirectProfilesChanged()");
+
+        this.directProfiles = directProfiles;
+
+        updateDrawer();
+    }
+
     private void updateDrawer() {
         Timber.v("updateDrawer()");
 
         // Check all the state we need for this has been received.
-        if (this.channels == null || this.users == null) {
+        if (this.channels == null) {
             Timber.v("Incomplete state so not updating drawer.");
             return;
         }
@@ -347,11 +374,31 @@ public class MainActivityPresenter extends AbstractActivityPresenter<MainActivit
         }
 
         drawerAdapter.add(new PrimaryDrawerItem().withName(R.string.it_channels_header_dm));
+
+        // We need the directProfiles to be loaded before displaying the DM channels.
+        if (directProfiles == null || directProfiles.isEmpty()) {
+            return;
+        }
+
         for (final Channel channel : dmChannels) {
-            drawerAdapter.add(new ChannelDrawerItem()
-                    .withChannel(channel)
-                    .withName("<Unknown User>")
-            );
+            // Get the user this DM channel is with.
+            User user = null;
+            for (final String participantId: channel.directParticipants()) {
+                if (directProfiles.containsKey(participantId)) {
+                    user = directProfiles.get(participantId);
+                    break;
+                }
+            }
+
+            // If we found the user, add the DM channel, else log an error.
+            if (user != null) {
+                drawerAdapter.add(new ChannelDrawerItem()
+                        .withChannel(channel)
+                        .withName(user.username())
+                );
+            } else {
+                Timber.e("Couldn't find a direct profile for direct channel ID: " + channel.id());
+            }
         }
     }
 

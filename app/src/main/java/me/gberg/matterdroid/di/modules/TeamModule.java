@@ -9,6 +9,7 @@ import me.gberg.matterdroid.api.TeamAPI;
 import me.gberg.matterdroid.api.UserAPI;
 import me.gberg.matterdroid.di.scopes.TeamScope;
 import me.gberg.matterdroid.managers.ChannelsManager;
+import me.gberg.matterdroid.managers.DirectProfilesManager;
 import me.gberg.matterdroid.managers.MembersManager;
 import me.gberg.matterdroid.managers.PostsManager;
 import me.gberg.matterdroid.managers.SessionManager;
@@ -75,5 +76,11 @@ public class TeamModule {
     @TeamScope
     UsersManager providesUsersManager(Team team, UserAPI userAPI, TeamBus bus, ErrorParser errorParser) {
         return new UsersManager(team, userAPI, bus, errorParser);
+    }
+
+    @Provides
+    @TeamScope
+    DirectProfilesManager providesDirectProfilesManager(TeamBus teamBus, UserAPI userApi, ErrorParser errorParser) {
+        return new DirectProfilesManager(teamBus, userApi, errorParser);
     }
 }

@@ -18,4 +18,7 @@ public interface UserAPI {
 
     @GET("api/v3/users/profiles/{teamId}")
     Observable<Response<Map<String, User>>> users(@Path("teamId") String teamId);
+
+    @GET("api/v3/users/direct_profiles")
+    Observable<Response<Map<String, User>>> directProfiles();
 }
