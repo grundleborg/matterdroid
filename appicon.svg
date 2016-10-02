@@ -14,7 +14,10 @@
    inkscape:version="0.48.5 r10040"
    width="407"
    height="407"
-   sodipodi:docname="material icon template.png">
+   sodipodi:docname="appicon.svg"
+   inkscape:export-filename="/home/gberg/code/src/fun/MatterDroid/appicon.png"
+   inkscape:export-xdpi="113.22"
+   inkscape:export-ydpi="113.22">
   <metadata
      id="metadata3056">
     <rdf:RDF>
@@ -75,14 +78,14 @@
      id="namedview3052"
      showgrid="false"
      inkscape:zoom="0.66292135"
-     inkscape:cx="479.30527"
+     inkscape:cx="215.32222"
      inkscape:cy="161.87547"
      inkscape:window-x="1223"
      inkscape:window-y="91"
      inkscape:window-maximized="0"
      inkscape:current-layer="svg3050" />
   <rect
-     style="fill:#2f81b7;fill-opacity:1;stroke:none"
+     style="fill:#136197;fill-opacity:1;stroke:none"
      id="rect3062"
      width="407"
      height="407"
