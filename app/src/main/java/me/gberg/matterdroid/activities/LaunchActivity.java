@@ -1,5 +1,7 @@
 package me.gberg.matterdroid.activities;
 
+import android.app.Activity;
+import android.content.Intent;
 import android.os.Bundle;
 
 import com.google.gson.Gson;
@@ -105,5 +107,10 @@ public class LaunchActivity extends NaviAppCompatActivity {
         sessionManager.setUser(event.getUser());
         ChooseTeamActivity.launch(this);
         finish();
+    }
+
+    public static void launch(final Activity activity) {
+        Intent intent = new Intent(activity, LaunchActivity.class);
+        activity.startActivity(intent);
     }
 }

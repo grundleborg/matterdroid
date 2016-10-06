@@ -74,10 +74,10 @@ public class MainActivity extends PresentedActivity {
         super.onCreate(savedInstanceState);
         Timber.v("onCreate() Called");
 
-        // Redirect to Choose Team activity if we can't inject the Team Component.
+        // Redirect to Launch activity if we can't inject the Team Component.
         TeamComponent teamComponent = ((App) getApplication()).getTeamComponent();
         if (teamComponent == null) {
-            ChooseTeamActivity.launch(this);
+            LaunchActivity.launch(this);
             finish();
             return;
         }

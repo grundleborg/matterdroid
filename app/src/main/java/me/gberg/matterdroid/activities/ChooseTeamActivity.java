@@ -77,10 +77,10 @@ public class ChooseTeamActivity extends NaviAppCompatActivity {
         super.onCreate(savedInstanceState);
         Timber.v("onCreate() called");
 
-        // Redirect to the login activity if we can't inject the UserComponent.
+        // Redirect to the launch activity if we can't inject the UserComponent.
         UserComponent userComponent = ((App) getApplication()).getUserComponent();
         if (userComponent == null) {
-            LoginActivity.launch(this);
+            LaunchActivity.launch(this);
             finish();
             return;
         }
